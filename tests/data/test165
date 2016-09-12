@@ -54,5 +54,8 @@ Accept: */*
 Proxy-Connection: Keep-Alive
 
 </protocol>
+<valgrind>
+disable
+</valgrind>
 </verify>
 </testcase>

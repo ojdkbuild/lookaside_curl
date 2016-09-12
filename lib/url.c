@@ -2961,10 +2961,10 @@ ConnectionExists(struct SessionHandle *data,
               continue;
             }
           }
-          if((needle->handler->protocol & CURLPROTO_FTP) ||
+          if((!(needle->handler->flags & PROTOPT_CREDSPERREQUEST)) ||
              ((needle->handler->protocol & CURLPROTO_HTTP) && wantNTLM)) {
-            /* This is FTP or HTTP+NTLM, verify that we're using the same name
-               and password as well */
+            /* This protocol requires credentials per connection or is HTTP+NTLM,
+               so verify that we're using the same name and password as well */
             if(!strequal(needle->user, check->user) ||
                !strequal(needle->passwd, check->passwd)) {
               /* one of them was different */

@@ -11,7 +11,6 @@
 # the official API, but we re-use the code here to avoid duplication.
 CURLX_ONES = \
 	../lib/strtoofft.c \
-	../lib/strdup.c \
 	../lib/rawstr.c \
 	../lib/nonblock.c
 

@@ -1910,7 +1910,7 @@ Daniel Stenberg (12 Nov 2012)
 
 - [Gabriel Sjoberg brought this change]
 
-  Digst: Add microseconds into nounce calculation
+  Digest: Add microseconds into nounce calculation
   
   When using only 1 second precision, curl doesn't create new cnonce
   values quickly enough for all uses.

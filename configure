@@ -23641,9 +23641,9 @@ $as_echo "found" >&6; }
          CPPFLAGS="$CPPFLAGS $addcflags"
       fi
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PK11_CreateGenericObject in -lnss3" >&5
-$as_echo_n "checking for PK11_CreateGenericObject in -lnss3... " >&6; }
-if ${ac_cv_lib_nss3_PK11_CreateGenericObject+:} false; then :
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SSL_VersionRangeSet in -lnss3" >&5
+$as_echo_n "checking for SSL_VersionRangeSet in -lnss3... " >&6; }
+if ${ac_cv_lib_nss3_SSL_VersionRangeSet+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -23655,26 +23655,26 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char PK11_CreateGenericObject ();
+char SSL_VersionRangeSet ();
 int main (void)
 {
-return PK11_CreateGenericObject ();
+return SSL_VersionRangeSet ();
  ;
  return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_nss3_PK11_CreateGenericObject=yes
+  ac_cv_lib_nss3_SSL_VersionRangeSet=yes
 else
-  ac_cv_lib_nss3_PK11_CreateGenericObject=no
+  ac_cv_lib_nss3_SSL_VersionRangeSet=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_nss3_PK11_CreateGenericObject" >&5
-$as_echo "$ac_cv_lib_nss3_PK11_CreateGenericObject" >&6; }
-if test "x$ac_cv_lib_nss3_PK11_CreateGenericObject" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_nss3_SSL_VersionRangeSet" >&5
+$as_echo "$ac_cv_lib_nss3_SSL_VersionRangeSet" >&6; }
+if test "x$ac_cv_lib_nss3_SSL_VersionRangeSet" = xyes; then :
 
 
 $as_echo "#define USE_NSS 1" >>confdefs.h
@@ -23696,18 +23696,6 @@ fi
       if test "x$USE_NSS" = "xyes"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: detected NSS version $version" >&5
 $as_echo "$as_me: detected NSS version $version" >&6;}
-
-                        ac_fn_c_check_func "$LINENO" "NSS_InitContext" "ac_cv_func_NSS_InitContext"
-if test "x$ac_cv_func_NSS_InitContext" = xyes; then :
-
-
-$as_echo "#define HAVE_NSS_INITCONTEXT 1" >>confdefs.h
-
-          HAVE_NSS_INITCONTEXT=1
-
-
-fi
-
 
                                         if test "x$cross_compiling" != "xyes"; then
           LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nssprefix/lib$libsuff"

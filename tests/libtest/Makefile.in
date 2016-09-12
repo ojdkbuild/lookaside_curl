@@ -85,7 +85,7 @@ noinst_PROGRAMS = chkhostname$(EXEEXT) libauthretry$(EXEEXT) \
 	lib591$(EXEEXT) lib597$(EXEEXT) lib598$(EXEEXT) \
 	lib599$(EXEEXT) lib1500$(EXEEXT) lib1501$(EXEEXT) \
 	lib1502$(EXEEXT) lib1503$(EXEEXT) lib1504$(EXEEXT) \
-	lib1505$(EXEEXT) lib1506$(EXEEXT)
+	lib1505$(EXEEXT) lib1506$(EXEEXT) lib1508$(EXEEXT)
 subdir = tests/libtest
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/curl-compilers.m4 \
@@ -173,6 +173,13 @@ am_lib1506_OBJECTS = lib1506-lib1506.$(OBJEXT) $(am__objects_18) \
 	$(am__objects_19) $(am__objects_20)
 lib1506_OBJECTS = $(am_lib1506_OBJECTS)
 lib1506_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__objects_151 = lib1508-first.$(OBJEXT)
+am__objects_152 = lib1508-testutil.$(OBJEXT)
+am__objects_153 = lib1508-warnless.$(OBJEXT)
+am_lib1508_OBJECTS = lib1508-lib1508.$(OBJEXT) $(am__objects_151) \
+	$(am__objects_152) $(am__objects_153)
+lib1508_OBJECTS = $(am_lib1508_OBJECTS)
+lib1508_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_21 = lib500-first.$(OBJEXT)
 am__objects_22 = lib500-testutil.$(OBJEXT)
 am__objects_23 = lib500-testtrace.$(OBJEXT)
@@ -632,7 +639,7 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 SOURCES = $(libhostname_la_SOURCES) $(chkhostname_SOURCES) \
 	$(lib1500_SOURCES) $(lib1501_SOURCES) $(lib1502_SOURCES) \
 	$(lib1503_SOURCES) $(lib1504_SOURCES) $(lib1505_SOURCES) \
-	$(lib1506_SOURCES) $(lib500_SOURCES) $(lib501_SOURCES) \
+	$(lib1506_SOURCES) $(lib1508_SOURCES) $(lib500_SOURCES) $(lib501_SOURCES) \
 	$(lib502_SOURCES) $(lib503_SOURCES) $(lib504_SOURCES) \
 	$(lib505_SOURCES) $(lib506_SOURCES) $(lib507_SOURCES) \
 	$(lib508_SOURCES) $(lib510_SOURCES) $(lib511_SOURCES) \
@@ -662,7 +669,7 @@ SOURCES = $(libhostname_la_SOURCES) $(chkhostname_SOURCES) \
 DIST_SOURCES = $(libhostname_la_SOURCES) $(chkhostname_SOURCES) \
 	$(lib1500_SOURCES) $(lib1501_SOURCES) $(lib1502_SOURCES) \
 	$(lib1503_SOURCES) $(lib1504_SOURCES) $(lib1505_SOURCES) \
-	$(lib1506_SOURCES) $(lib500_SOURCES) $(lib501_SOURCES) \
+	$(lib1506_SOURCES) $(lib1508_SOURCES) $(lib500_SOURCES) $(lib501_SOURCES)  \
 	$(lib502_SOURCES) $(lib503_SOURCES) $(lib504_SOURCES) \
 	$(lib505_SOURCES) $(lib506_SOURCES) $(lib507_SOURCES) \
 	$(lib508_SOURCES) $(lib510_SOURCES) $(lib511_SOURCES) \
@@ -1155,6 +1162,9 @@ lib1505_CPPFLAGS = $(AM_CPPFLAGS) -DLIB1505
 lib1506_SOURCES = lib1506.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
 lib1506_LDADD = $(TESTUTIL_LIBS)
 lib1506_CPPFLAGS = $(AM_CPPFLAGS) -DLIB1506
+lib1508_SOURCES = lib1508.c $(SUPPORTFILES) $(TESTUTIL) $(WARNLESS)
+lib1508_LDADD = $(TESTUTIL_LIBS)
+lib1508_CPPFLAGS = $(AM_CPPFLAGS) -DLIB1508
 @BUILD_LIBHOSTNAME_FALSE@noinst_LTLIBRARIES = 
 
 # Makefile.inc provides the source defines (TESTUTIL, SUPPORTFILES,
@@ -1253,6 +1263,9 @@ lib1505$(EXEEXT): $(lib1505_OBJECTS) $(lib1505_DEPENDENCIES) $(EXTRA_lib1505_DEP
 lib1506$(EXEEXT): $(lib1506_OBJECTS) $(lib1506_DEPENDENCIES) $(EXTRA_lib1506_DEPENDENCIES) 
 	@rm -f lib1506$(EXEEXT)
 	$(LINK) $(lib1506_OBJECTS) $(lib1506_LDADD) $(LIBS)
+lib1508$(EXEEXT): $(lib1508_OBJECTS) $(lib1508_DEPENDENCIES) $(EXTRA_lib1508_DEPENDENCIES) 
+	@rm -f lib1508$(EXEEXT)
+	$(LINK) $(lib1508_OBJECTS) $(lib1508_LDADD) $(LIBS)
 lib500$(EXEEXT): $(lib500_OBJECTS) $(lib500_DEPENDENCIES) $(EXTRA_lib500_DEPENDENCIES) 
 	@rm -f lib500$(EXEEXT)
 	$(LINK) $(lib500_OBJECTS) $(lib500_LDADD) $(LIBS)
@@ -1520,6 +1533,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib1506-lib1506.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib1506-testutil.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib1506-warnless.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib1508-first.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib1508-lib1508.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib1508-testutil.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib1508-warnless.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib500-first.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib500-lib500.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lib500-testtrace.Po@am__quote@
@@ -2162,6 +2179,62 @@ lib1506-warnless.obj: ../../lib/warnless.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../../lib/warnless.c' object='lib1506-warnless.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1506_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib1506-warnless.obj `if test -f '../../lib/warnless.c'; then $(CYGPATH_W) '../../lib/warnless.c'; else $(CYGPATH_W) '$(srcdir)/../../lib/warnless.c'; fi`
+
+lib1508-lib1508.o: lib1508.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib1508-lib1508.o -MD -MP -MF $(DEPDIR)/lib1508-lib1508.Tpo -c -o lib1508-lib1508.o `test -f 'lib1508.c' || echo '$(srcdir)/'`lib1508.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/lib1508-lib1508.Tpo $(DEPDIR)/lib1508-lib1508.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='lib1508.c' object='lib1508-lib1508.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib1508-lib1508.o `test -f 'lib1508.c' || echo '$(srcdir)/'`lib1508.c
+
+lib1508-lib1508.obj: lib1508.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib1508-lib1508.obj -MD -MP -MF $(DEPDIR)/lib1508-lib1508.Tpo -c -o lib1508-lib1508.obj `if test -f 'lib1508.c'; then $(CYGPATH_W) 'lib1508.c'; else $(CYGPATH_W) '$(srcdir)/lib1508.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/lib1508-lib1508.Tpo $(DEPDIR)/lib1508-lib1508.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='lib1508.c' object='lib1508-lib1508.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib1508-lib1508.obj `if test -f 'lib1508.c'; then $(CYGPATH_W) 'lib1508.c'; else $(CYGPATH_W) '$(srcdir)/lib1508.c'; fi`
+
+lib1508-first.o: first.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib1508-first.o -MD -MP -MF $(DEPDIR)/lib1508-first.Tpo -c -o lib1508-first.o `test -f 'first.c' || echo '$(srcdir)/'`first.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/lib1508-first.Tpo $(DEPDIR)/lib1508-first.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='first.c' object='lib1508-first.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib1508-first.o `test -f 'first.c' || echo '$(srcdir)/'`first.c
+
+lib1508-first.obj: first.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib1508-first.obj -MD -MP -MF $(DEPDIR)/lib1508-first.Tpo -c -o lib1508-first.obj `if test -f 'first.c'; then $(CYGPATH_W) 'first.c'; else $(CYGPATH_W) '$(srcdir)/first.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/lib1508-first.Tpo $(DEPDIR)/lib1508-first.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='first.c' object='lib1508-first.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib1508-first.obj `if test -f 'first.c'; then $(CYGPATH_W) 'first.c'; else $(CYGPATH_W) '$(srcdir)/first.c'; fi`
+
+lib1508-testutil.o: testutil.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib1508-testutil.o -MD -MP -MF $(DEPDIR)/lib1508-testutil.Tpo -c -o lib1508-testutil.o `test -f 'testutil.c' || echo '$(srcdir)/'`testutil.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/lib1508-testutil.Tpo $(DEPDIR)/lib1508-testutil.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='testutil.c' object='lib1508-testutil.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib1508-testutil.o `test -f 'testutil.c' || echo '$(srcdir)/'`testutil.c
+
+lib1508-testutil.obj: testutil.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib1508-testutil.obj -MD -MP -MF $(DEPDIR)/lib1508-testutil.Tpo -c -o lib1508-testutil.obj `if test -f 'testutil.c'; then $(CYGPATH_W) 'testutil.c'; else $(CYGPATH_W) '$(srcdir)/testutil.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/lib1508-testutil.Tpo $(DEPDIR)/lib1508-testutil.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='testutil.c' object='lib1508-testutil.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib1508-testutil.obj `if test -f 'testutil.c'; then $(CYGPATH_W) 'testutil.c'; else $(CYGPATH_W) '$(srcdir)/testutil.c'; fi`
+
+lib1508-warnless.o: ../../lib/warnless.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib1508-warnless.o -MD -MP -MF $(DEPDIR)/lib1508-warnless.Tpo -c -o lib1508-warnless.o `test -f '../../lib/warnless.c' || echo '$(srcdir)/'`../../lib/warnless.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/lib1508-warnless.Tpo $(DEPDIR)/lib1508-warnless.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../../lib/warnless.c' object='lib1508-warnless.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib1508-warnless.o `test -f '../../lib/warnless.c' || echo '$(srcdir)/'`../../lib/warnless.c
+
+lib1508-warnless.obj: ../../lib/warnless.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib1508-warnless.obj -MD -MP -MF $(DEPDIR)/lib1508-warnless.Tpo -c -o lib1508-warnless.obj `if test -f '../../lib/warnless.c'; then $(CYGPATH_W) '../../lib/warnless.c'; else $(CYGPATH_W) '$(srcdir)/../../lib/warnless.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/lib1508-warnless.Tpo $(DEPDIR)/lib1508-warnless.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='../../lib/warnless.c' object='lib1508-warnless.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib1508_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lib1508-warnless.obj `if test -f '../../lib/warnless.c'; then $(CYGPATH_W) '../../lib/warnless.c'; else $(CYGPATH_W) '$(srcdir)/../../lib/warnless.c'; fi`
 
 lib500-lib500.o: lib500.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib500_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lib500-lib500.o -MD -MP -MF $(DEPDIR)/lib500-lib500.Tpo -c -o lib500-lib500.o `test -f 'lib500.c' || echo '$(srcdir)/'`lib500.c

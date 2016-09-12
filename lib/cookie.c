@@ -94,6 +94,7 @@ Example set of cookies:
 #include "strtoofft.h"
 #include "rawstr.h"
 #include "curl_memrchr.h"
+#include "inet_pton.h"
 
 /* The last #include file should be: */
 #include "memdebug.h"
@@ -106,6 +107,8 @@ static void freecookie(struct Cookie *co)
     free(co->domain);
   if(co->path)
     free(co->path);
+  if(co->spath)
+    free(co->spath);
   if(co->name)
     free(co->name);
   if(co->value)
@@ -144,6 +147,116 @@ static bool tailmatch(const char *cooke_domain, const char *hostname)
 }
 
 /*
+ * matching cookie path and url path
+ * RFC6265 5.1.4 Paths and Path-Match
+ */
+static bool pathmatch(const char* cookie_path, const char* request_uri)
+{
+  size_t cookie_path_len;
+  size_t uri_path_len;
+  char* uri_path = NULL;
+  char* pos;
+  bool ret = FALSE;
+
+  /* cookie_path must not have last '/' separator. ex: /sample */
+  cookie_path_len = strlen(cookie_path);
+  if(1 == cookie_path_len) {
+    /* cookie_path must be '/' */
+    return TRUE;
+  }
+
+  uri_path = strdup(request_uri);
+  if(!uri_path)
+    return FALSE;
+  pos = strchr(uri_path, '?');
+  if(pos)
+    *pos = 0x0;
+
+  /* #-fragments are already cut off! */
+  if(0 == strlen(uri_path) || uri_path[0] != '/') {
+    free(uri_path);
+    uri_path = strdup("/");
+    if(!uri_path)
+      return FALSE;
+  }
+
+  /* here, RFC6265 5.1.4 says
+     4. Output the characters of the uri-path from the first character up
+        to, but not including, the right-most %x2F ("/").
+     but URL path /hoge?fuga=xxx means /hoge/index.cgi?fuga=xxx in some site
+     without redirect.
+     Ignore this algorithm because /hoge is uri path for this case
+     (uri path is not /).
+   */
+
+  uri_path_len = strlen(uri_path);
+
+  if(uri_path_len < cookie_path_len) {
+    ret = FALSE;
+    goto pathmatched;
+  }
+
+  /* not using checkprefix() because matching should be case-sensitive */
+  if(strncmp(cookie_path, uri_path, cookie_path_len)) {
+    ret = FALSE;
+    goto pathmatched;
+  }
+
+  /* The cookie-path and the uri-path are identical. */
+  if(cookie_path_len == uri_path_len) {
+    ret = TRUE;
+    goto pathmatched;
+  }
+
+  /* here, cookie_path_len < url_path_len */
+  if(uri_path[cookie_path_len] == '/') {
+    ret = TRUE;
+    goto pathmatched;
+  }
+
+  ret = FALSE;
+
+pathmatched:
+  free(uri_path);
+  return ret;
+}
+
+/*
+ * cookie path sanitize
+ */
+static char *sanitize_cookie_path(const char *cookie_path)
+{
+  size_t len;
+  char *new_path = strdup(cookie_path);
+  if(!new_path)
+    return NULL;
+
+  /* some stupid site sends path attribute with '"'. */
+  if(new_path[0] == '\"') {
+    memmove((void *)new_path, (const void *)(new_path + 1), strlen(new_path));
+  }
+  if(new_path[strlen(new_path) - 1] == '\"') {
+    new_path[strlen(new_path) - 1] = 0x0;
+  }
+
+  /* RFC6265 5.2.4 The Path Attribute */
+  if(new_path[0] != '/') {
+    /* Let cookie-path be the default-path. */
+    free(new_path);
+    new_path = strdup("/");
+    return new_path;
+  }
+
+  /* convert /hoge/ to /hoge */
+  len = strlen(new_path);
+  if(1 < len && new_path[len - 1] == '/') {
+    new_path[len - 1] = 0x0;
+  }
+
+  return new_path;
+}
+
+/*
  * Load cookies from all given cookie files (CURLOPT_COOKIEFILE).
  */
 void Curl_cookie_loadfiles(struct SessionHandle *data)
@@ -177,6 +290,56 @@ static void strstore(char **str, const char *newstr)
   *str = strdup(newstr);
 }
 
+/*
+ * remove_expired() removes expired cookies.
+ */
+static void remove_expired(struct CookieInfo *cookies)
+{
+  struct Cookie *co, *nx, *pv;
+  curl_off_t now = (curl_off_t)time(NULL);
+
+  co = cookies->cookies;
+  pv = NULL;
+  while(co) {
+    nx = co->next;
+    if((co->expirestr || co->maxage) && co->expires < now) {
+      if(co == cookies->cookies) {
+        cookies->cookies = co->next;
+      }
+      else {
+        pv->next = co->next;
+      }
+      cookies->numcookies--;
+      freecookie(co);
+    }
+    else {
+      pv = co;
+    }
+    co = nx;
+  }
+}
+
+/*
+ * Return true if the given string is an IP(v4|v6) address.
+ */
+static bool isip(const char *domain)
+{
+  struct in_addr addr;
+#ifdef ENABLE_IPV6
+  struct in6_addr addr6;
+#endif
+
+  if(Curl_inet_pton(AF_INET, domain, &addr)
+#ifdef ENABLE_IPV6
+     || Curl_inet_pton(AF_INET6, domain, &addr6)
+#endif
+    ) {
+    /* domain name given as IP address */
+    return TRUE;
+  }
+
+  return FALSE;
+}
 
 /****************************************************************************
  *
@@ -288,6 +451,11 @@ Curl_cookie_add(struct SessionHandle *data,
             badcookie = TRUE; /* out of memory bad */
             break;
           }
+          co->spath = sanitize_cookie_path(co->path);
+          if(!co->spath) {
+            badcookie = TRUE; /* out of memory bad */
+            break;
+          }
         }
         else if(Curl_raw_equal("domain", name)) {
           /* note that this name may or may not have a preceding dot, but
@@ -327,24 +495,27 @@ Curl_cookie_add(struct SessionHandle *data,
                   whatptr);
           }
           else {
+            bool is_ip;
+
             /* Now, we make sure that our host is within the given domain,
                or the given domain is not valid and thus cannot be set. */
 
             if('.' == whatptr[0])
               whatptr++; /* ignore preceding dot */
 
-            if(!domain || tailmatch(whatptr, domain)) {
-              const char *tailptr=whatptr;
-              if(tailptr[0] == '.')
-                tailptr++;
-              strstore(&co->domain, tailptr); /* don't prefix w/dots
-                                                 internally */
+            is_ip = isip(domain ? domain : whatptr);
+  
+            if(!domain
+               || (is_ip && !strcmp(whatptr, domain))
+               || (!is_ip && tailmatch(whatptr, domain))) {
+              strstore(&co->domain, whatptr);
               if(!co->domain) {
                 badcookie = TRUE;
                 break;
               }
-              co->tailmatch=TRUE; /* we always do that if the domain name was
-                                     given */
+              if(!is_ip)
+                co->tailmatch=TRUE; /* we always do that if the domain name was
+                                       given */
             }
             else {
               /* we did not get a tailmatch and then the attempted set domain
@@ -378,9 +549,6 @@ Curl_cookie_add(struct SessionHandle *data,
             badcookie = TRUE;
             break;
           }
-          co->expires =
-            strtol((*co->maxage=='\"')?&co->maxage[1]:&co->maxage[0],NULL,10)
-            + (long)now;
         }
         else if(Curl_raw_equal("expires", name)) {
           strstore(&co->expirestr, whatptr);
@@ -388,17 +556,6 @@ Curl_cookie_add(struct SessionHandle *data,
             badcookie = TRUE;
             break;
           }
-          /* Note that if the date couldn't get parsed for whatever reason,
-             the cookie will be treated as a session cookie */
-          co->expires = curl_getdate(what, &now);
-
-          /* Session cookies have expires set to 0 so if we get that back
-             from the date parser let's add a second to make it a
-             non-session cookie */
-          if(co->expires == 0)
-            co->expires = 1;
-          else if(co->expires < 0)
-            co->expires = 0;
         }
         else if(!co->name) {
           co->name = strdup(name);
@@ -433,6 +590,30 @@ Curl_cookie_add(struct SessionHandle *data,
         semiptr=strchr(ptr, '\0');
     } while(semiptr);
 
+    if(co->maxage) {
+      co->expires =
+        curlx_strtoofft((*co->maxage=='\"')?
+                        &co->maxage[1]:&co->maxage[0], NULL, 10);
+      if(CURL_OFF_T_MAX - now < co->expires)
+        /* avoid overflow */
+        co->expires = CURL_OFF_T_MAX;
+      else
+        co->expires += now;
+    }
+    else if(co->expirestr) {
+      /* Note that if the date couldn't get parsed for whatever reason,
+         the cookie will be treated as a session cookie */
+      co->expires = curl_getdate(co->expirestr, NULL);
+
+      /* Session cookies have expires set to 0 so if we get that back
+         from the date parser let's add a second to make it a
+         non-session cookie */
+      if(co->expires == 0)
+        co->expires = 1;
+      else if(co->expires < 0)
+        co->expires = 0;
+    }
+
     if(!badcookie && !co->domain) {
       if(domain) {
         /* no domain was given in the header line, set the default */
@@ -461,6 +642,9 @@ Curl_cookie_add(struct SessionHandle *data,
         if(co->path) {
           memcpy(co->path, path, pathlen);
           co->path[pathlen]=0; /* zero terminate */
+          co->spath = sanitize_cookie_path(co->path);
+          if(!co->spath)
+            badcookie = TRUE; /* out of memory bad */
         }
         else
           badcookie = TRUE;
@@ -552,11 +736,20 @@ Curl_cookie_add(struct SessionHandle *data,
           co->path = strdup(ptr);
           if(!co->path)
             badcookie = TRUE;
+          else {
+            co->spath = sanitize_cookie_path(co->path);
+            if(!co->spath) {
+              badcookie = TRUE; /* out of memory bad */
+            }
+          }
           break;
         }
         /* this doesn't look like a path, make one up! */
         co->path = strdup("/");
         if(!co->path)
+          badcookie = TRUE;
+        co->spath = strdup("/");
+        if(!co->spath)
           badcookie = TRUE;
         fields++; /* add a field and fall down to secure */
         /* FALLTHROUGH */
@@ -611,6 +804,9 @@ Curl_cookie_add(struct SessionHandle *data,
      superceeds an already existing cookie, which it may if the previous have
      the same domain and path as this */
 
+  /* at first, remove expired cookies */
+  remove_expired(c);
+
   clist = c->cookies;
   replace_old = FALSE;
   while(clist) {
@@ -628,14 +824,14 @@ Curl_cookie_add(struct SessionHandle *data,
       if(replace_old) {
         /* the domains were identical */
 
-        if(clist->path && co->path) {
-          if(Curl_raw_equal(clist->path, co->path)) {
+        if(clist->spath && co->spath) {
+          if(Curl_raw_equal(clist->spath, co->spath)) {
             replace_old = TRUE;
           }
           else
             replace_old = FALSE;
         }
-        else if(!clist->path && !co->path)
+        else if(!clist->spath && !co->spath)
           replace_old = TRUE;
         else
           replace_old = FALSE;
@@ -664,6 +860,8 @@ Curl_cookie_add(struct SessionHandle *data,
           free(clist->domain);
         if(clist->path)
           free(clist->path);
+        if(clist->spath)
+          free(clist->spath);
         if(clist->expirestr)
           free(clist->expirestr);
 
@@ -819,9 +1017,16 @@ struct Cookie *Curl_cookie_getlist(struct CookieInfo *c,
   time_t now = time(NULL);
   struct Cookie *mainco=NULL;
   size_t matches = 0;
+  bool is_ip;
 
   if(!c || !c->cookies)
     return NULL; /* no cookie struct or no cookies in the struct */
+
+  /* at first, remove expired cookies */
+  remove_expired(c);
+
+  /* check if host is an IP(v4|v6) address */
+  is_ip = isip(host);
 
   co = c->cookies;
 
@@ -834,17 +1039,14 @@ struct Cookie *Curl_cookie_getlist(struct CookieInfo *c,
 
       /* now check if the domain is correct */
       if(!co->domain ||
-         (co->tailmatch && tailmatch(co->domain, host)) ||
-         (!co->tailmatch && Curl_raw_equal(host, co->domain)) ) {
+         (co->tailmatch && !is_ip && tailmatch(co->domain, host)) ||
+         ((!co->tailmatch || is_ip) && Curl_raw_equal(host, co->domain)) ) {
         /* the right part of the host matches the domain stuff in the
            cookie data */
 
         /* now check the left part of the path with the cookies path
            requirement */
-        if(!co->path ||
-           /* not using checkprefix() because matching should be
-              case-sensitive */
-           !strncmp(co->path, path, strlen(co->path)) ) {
+        if(!co->spath || pathmatch(co->spath, path) ) {
 
           /* and now, we know this is a match and we should create an
              entry for the return-linked-list */
@@ -1067,6 +1269,9 @@ static int cookie_output(struct CookieInfo *c, const char *dumphere)
     /* If there are no known cookies, we don't write or even create any
        destination file */
     return 0;
+
+  /* at first, remove expired cookies */
+  remove_expired(c);
 
   if(strequal("-", dumphere)) {
     /* use stdout */

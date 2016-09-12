@@ -122,6 +122,10 @@ static const cipher_s cipherlist[] = {
   {"rsa_des_56_sha",             TLS_RSA_EXPORT1024_WITH_DES_CBC_SHA},
   {"rsa_rc4_56_sha",             TLS_RSA_EXPORT1024_WITH_RC4_56_SHA},
   /* AES ciphers. */
+  {"dhe_dss_aes_128_cbc_sha",    TLS_DHE_DSS_WITH_AES_128_CBC_SHA},
+  {"dhe_dss_aes_256_cbc_sha",    TLS_DHE_DSS_WITH_AES_256_CBC_SHA},
+  {"dhe_rsa_aes_128_cbc_sha",    TLS_DHE_RSA_WITH_AES_128_CBC_SHA},
+  {"dhe_rsa_aes_256_cbc_sha",    TLS_DHE_RSA_WITH_AES_256_CBC_SHA},
   {"rsa_aes_128_sha",            TLS_RSA_WITH_AES_128_CBC_SHA},
   {"rsa_aes_256_sha",            TLS_RSA_WITH_AES_256_CBC_SHA},
   /* ECC ciphers. */
@@ -150,18 +154,26 @@ static const cipher_s cipherlist[] = {
   {"ecdh_anon_3des_sha",         TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA},
   {"ecdh_anon_aes_128_sha",      TLS_ECDH_anon_WITH_AES_128_CBC_SHA},
   {"ecdh_anon_aes_256_sha",      TLS_ECDH_anon_WITH_AES_256_CBC_SHA},
-};
-
-/* following ciphers are new in NSS 3.4 and not enabled by default, therefore
-   they are enabled explicitly */
-static const int enable_ciphers_by_default[] = {
-  TLS_DHE_DSS_WITH_AES_128_CBC_SHA,
-  TLS_DHE_DSS_WITH_AES_256_CBC_SHA,
-  TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
-  TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
-  TLS_RSA_WITH_AES_128_CBC_SHA,
-  TLS_RSA_WITH_AES_256_CBC_SHA,
-  SSL_NULL_WITH_NULL_NULL
+#ifdef TLS_RSA_WITH_NULL_SHA256
+  /* new HMAC-SHA256 cipher suites specified in RFC */
+  {"rsa_null_sha_256",                TLS_RSA_WITH_NULL_SHA256},
+  {"rsa_aes_128_cbc_sha_256",         TLS_RSA_WITH_AES_128_CBC_SHA256},
+  {"rsa_aes_256_cbc_sha_256",         TLS_RSA_WITH_AES_256_CBC_SHA256},
+  {"dhe_rsa_aes_128_cbc_sha_256",     TLS_DHE_RSA_WITH_AES_128_CBC_SHA256},
+  {"dhe_rsa_aes_256_cbc_sha_256",     TLS_DHE_RSA_WITH_AES_256_CBC_SHA256},
+  {"ecdhe_ecdsa_aes_128_cbc_sha_256", TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256},
+  {"ecdhe_rsa_aes_128_cbc_sha_256",   TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256},
+#endif
+#ifdef TLS_RSA_WITH_AES_128_GCM_SHA256
+  /* AES GCM cipher suites in RFC 5288 and RFC 5289 */
+  {"rsa_aes_128_gcm_sha_256",         TLS_RSA_WITH_AES_128_GCM_SHA256},
+  {"dhe_rsa_aes_128_gcm_sha_256",     TLS_DHE_RSA_WITH_AES_128_GCM_SHA256},
+  {"dhe_dss_aes_128_gcm_sha_256",     TLS_DHE_DSS_WITH_AES_128_GCM_SHA256},
+  {"ecdhe_ecdsa_aes_128_gcm_sha_256", TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
+  {"ecdh_ecdsa_aes_128_gcm_sha_256",  TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256},
+  {"ecdhe_rsa_aes_128_gcm_sha_256",   TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+  {"ecdh_rsa_aes_128_gcm_sha_256",    TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256},
+#endif
 };
 
 static const char* pem_library = "libnsspem.so";
@@ -1214,7 +1226,6 @@ CURLcode Curl_nss_connect(struct connectdata *conn, int sockindex)
   curl_socket_t sockfd = conn->sock[sockindex];
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
   CURLcode curlerr;
-  const int *cipher_to_enable;
   PRSocketOptionData sock_opt;
   long time_left;
   PRUint32 timeout;
@@ -1303,16 +1314,6 @@ CURLcode Curl_nss_connect(struct connectdata *conn, int sockindex)
 
   /* reset the flag to avoid an infinite loop */
   data->state.ssl_connect_retry = FALSE;
-
-  /* enable all ciphers from enable_ciphers_by_default */
-  cipher_to_enable = enable_ciphers_by_default;
-  while(SSL_NULL_WITH_NULL_NULL != *cipher_to_enable) {
-    if(SSL_CipherPrefSet(model, *cipher_to_enable, PR_TRUE) != SECSuccess) {
-      curlerr = CURLE_SSL_CIPHER;
-      goto error;
-    }
-    cipher_to_enable++;
-  }
 
   if(data->set.ssl.cipher_list) {
     if(set_ciphers(data, model, data->set.ssl.cipher_list) != SECSuccess) {

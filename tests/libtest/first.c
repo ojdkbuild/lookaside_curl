@@ -25,6 +25,10 @@
 #include <locale.h> /* for setlocale() */
 #endif
 
+#ifdef USE_NSS
+#include <nspr.h>
+#endif
+
 #ifdef CURLDEBUG
 #  define MEMDEBUG_NODEFINES
 #  include "memdebug.h"
@@ -97,6 +101,7 @@ static void memory_tracking_init(void)
 int main(int argc, char **argv)
 {
   char *URL;
+  int result;
 
   memory_tracking_init();
 
@@ -127,5 +132,13 @@ int main(int argc, char **argv)
 
   fprintf(stderr, "URL: %s\n", URL);
 
-  return test(URL);
+  result = test(URL);
+
+#ifdef USE_NSS
+  if(PR_Initialized())
+    /* prevent valgrind from reporting possibly lost memory (fd cache, ...) */
+    PR_Cleanup();
+#endif
+
+  return result;
 }

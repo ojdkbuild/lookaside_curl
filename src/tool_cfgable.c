@@ -98,6 +98,7 @@ void free_config_fields(struct Configurable *config)
 
   config->trace_stream = NULL; /* closed elsewhere when appropriate */
 
+  Curl_safefree(config->unix_socket_path);
   Curl_safefree(config->writeout);
 
   config->errors = NULL; /* closed elsewhere when appropriate */

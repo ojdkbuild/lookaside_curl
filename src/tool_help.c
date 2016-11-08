@@ -214,6 +214,7 @@ static const char *const helptext[] = {
   "     --tlsuser USER  TLS username",
   "     --tlspassword STRING TLS password",
   "     --tlsauthtype STRING  TLS authentication type (default SRP)",
+  "     --unix-socket FILE    Connect through this UNIX domain socket",
   " -A, --user-agent STRING  User-Agent to send to server (H)",
   " -v, --verbose       Make the operation more talkative",
   " -V, --version       Show version number and quit",

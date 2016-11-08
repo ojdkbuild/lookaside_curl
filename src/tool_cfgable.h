@@ -204,6 +204,8 @@ struct Configurable {
   bool use_metalink;        /* process given URLs as metalink XML file */
   metalinkfile *metalinkfile_list; /* point to the first node */
   metalinkfile *metalinkfile_last; /* point to the last/current node */
+
+  char *unix_socket_path;   /* path to UNIX domain socket */
 }; /* struct Configurable */
 
 void free_config_fields(struct Configurable *config);

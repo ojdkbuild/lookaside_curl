@@ -1017,6 +1017,9 @@
 /* Use TLS-SRP authentication */
 #undef USE_TLS_SRP
 
+/* Use UNIX domain sockets */
+#undef USE_UNIX_SOCKETS
+
 /* Define to 1 if you have the `normaliz' (WinIDN) library (-lnormaliz). */
 #undef USE_WIN32_IDN
 

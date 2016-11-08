@@ -1536,6 +1536,9 @@ typedef enum {
   /* set the SMTP auth originator */
   CINIT(MAIL_AUTH, OBJECTPOINT, 217),
 
+  /* Path to UNIX domain socket */
+  CINIT(UNIX_SOCKET_PATH, OBJECTPOINT, 231),
+
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
 
@@ -2154,6 +2157,7 @@ typedef struct {
 #define CURL_VERSION_CURLDEBUG (1<<13) /* debug memory tracking supported */
 #define CURL_VERSION_TLSAUTH_SRP (1<<14) /* TLS-SRP auth is supported */
 #define CURL_VERSION_NTLM_WB   (1<<15) /* NTLM delegating to winbind helper */
+#define CURL_VERSION_UNIX_SOCKETS (1<<19) /* UNIX domain sockets support */
 
  /*
  * NAME curl_version_info()

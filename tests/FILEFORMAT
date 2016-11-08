@@ -165,6 +165,7 @@ smtp
 httptls+srp
 httptls+srp-ipv6
 http-proxy
+http-unix
 
 Give only one per line.  This subsection is mandatory.
 </server>
@@ -284,6 +285,7 @@ Available substitute variables include:
 %HTTPPORT  - Port number of the HTTP server
 %HOST6IP   - IPv6 address of the host running this test
 %HTTP6PORT - IPv6 port number of the HTTP server
+%HTTPUNIXPATH - Path to the UNIX socket of the HTTP server
 %HTTPSPORT - Port number of the HTTPS server
 %PROXYPORT - Port number of the HTTP proxy
 %FTPPORT   - Port number of the FTP server

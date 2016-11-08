@@ -144,7 +144,7 @@ static const struct LongShort aliases[]= {
   {"$v", "ssl-reqd",                 FALSE},
          /* 'ssl-reqd' new in 7.20.0, previously this was ftp-ssl-reqd */
   {"$w", "sessionid",                FALSE},
-         /* ¡sessionid' listed as --no-sessionid in the help */
+         /* ?sessionid' listed as --no-sessionid in the help */
   {"$x", "ftp-ssl-control",          FALSE},
   {"$y", "ftp-ssl-ccc",              FALSE},
   {"$j", "ftp-ssl-ccc-mode",         TRUE},
@@ -173,6 +173,7 @@ static const struct LongShort aliases[]= {
   {"$H", "mail-auth",                TRUE},
   {"$I", "post303",                  FALSE},
   {"$J", "metalink",                 FALSE},
+  {"$M", "unix-socket",              TRUE},
   {"0",  "http1.0",                  FALSE},
   {"1",  "tlsv1",                    FALSE},
   {"10",  "tlsv1.0",                 FALSE},
@@ -285,7 +286,8 @@ static const struct feat feats[] = {
   {"krb4",           CURL_VERSION_KERBEROS4},
   {"libz",           CURL_VERSION_LIBZ},
   {"CharConv",       CURL_VERSION_CONV},
-  {"TLS-SRP",        CURL_VERSION_TLSAUTH_SRP}
+  {"TLS-SRP",        CURL_VERSION_TLSAUTH_SRP},
+  {"unix-sockets",   CURL_VERSION_UNIX_SOCKETS}
 };
 
 ParameterError getparameter(char *flag,    /* f or -long-flag */
@@ -861,6 +863,9 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
 #endif
           break;
         }
+      case 'M': /* --unix-socket */
+        GetStr(&config->unix_socket_path, nextarg);
+        break;
       }
       break;
     case '#': /* --progress-bar */

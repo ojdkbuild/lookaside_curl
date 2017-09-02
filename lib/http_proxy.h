@@ -26,7 +26,8 @@
 /* ftp can use this as well */
 CURLcode Curl_proxyCONNECT(struct connectdata *conn,
                            int tunnelsocket,
-                           const char *hostname, unsigned short remote_port);
+                           const char *hostname, unsigned short remote_port,
+                           bool blocking);
 
 /* Default proxy timeout in milliseconds */
 #define PROXY_TIMEOUT (3600*1000)

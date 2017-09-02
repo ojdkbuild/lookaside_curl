@@ -421,6 +421,7 @@ CURLcode Curl_close(struct SessionHandle *data)
   data->state.path = NULL;
 
   Curl_safefree(data->state.proto.generic);
+  Curl_safefree(data->req.newurl);
 
   /* Close down all open SSL info and sessions */
   Curl_ssl_close_all(data);
@@ -3103,8 +3104,13 @@ static CURLcode ConnectionStore(struct SessionHandle *data,
    Note: this function's sub-functions call failf()
 
 */
-CURLcode Curl_connected_proxy(struct connectdata *conn)
+CURLcode Curl_connected_proxy(struct connectdata *conn, int sockindex)
 {
+  if(!conn->bits.proxy || sockindex)
+    /* this magic only works for the primary socket as the secondary is used
+       for FTP only and it has FTP specific magic in ftp.c */
+    return CURLE_OK;
+
   switch(conn->proxytype) {
 #ifndef CURL_DISABLE_PROXY
   case CURLPROXY_SOCKS5:
@@ -3162,7 +3168,7 @@ static CURLcode ConnectPlease(struct SessionHandle *data,
     conn->ip_addr = addr;
 
     if(*connected) {
-      result = Curl_connected_proxy(conn);
+      result = Curl_connected_proxy(conn, FIRSTSOCKET);
       if(!result) {
         conn->bits.tcpconnect[FIRSTSOCKET] = TRUE;
         Curl_pgrsTime(data, TIMER_CONNECT); /* connect done */
@@ -3917,6 +3923,14 @@ static CURLcode setup_connection_internals(struct connectdata *conn)
 {
   const struct Curl_handler * p;
   CURLcode result;
+
+  /* XXX: picked from curl-7_32_0-2-g4ad8e14 */
+  /* in some case in the multi state-machine, we go back to the CONNECT state
+     and then a second (or third or...) call to this function will be made
+     without doing a DISCONNECT or DONE in between (since the connection is
+     yet in place) and therefore this function needs to first make sure
+     there's no lingering previous data allocated. */
+  Curl_safefree(conn->data->req.newurl);
 
   conn->socktype = SOCK_STREAM; /* most of them are TCP streams */
 

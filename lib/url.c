@@ -2988,7 +2988,7 @@ ConnectionExists(struct SessionHandle *data,
           }
           if((!(needle->handler->flags & PROTOPT_CREDSPERREQUEST)) ||
              (wantNTLM || check->ntlm.state != NTLMSTATE_NONE)) {
-            /* This protocol requires credentials per connection or is HTTP+NTLM,
+            /* This proto requires credentials per connection or is HTTP+NTLM,
                so verify that we're using the same name and password as well */
             if(!strequal(needle->user, check->user) ||
                !strequal(needle->passwd, check->passwd)) {

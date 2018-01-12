@@ -5255,6 +5255,7 @@ static CURLcode create_conn(struct SessionHandle *data,
   data->set.ssl.random_file = data->set.str[STRING_SSL_RANDOM_FILE];
   data->set.ssl.egdsocket = data->set.str[STRING_SSL_EGDSOCKET];
   data->set.ssl.cipher_list = data->set.str[STRING_SSL_CIPHER_LIST];
+  data->set.ssl.clientcert = data->set.str[STRING_CERT];
 #ifdef USE_TLS_SRP
   data->set.ssl.username = data->set.str[STRING_TLSAUTH_USERNAME];
   data->set.ssl.password = data->set.str[STRING_TLSAUTH_PASSWORD];

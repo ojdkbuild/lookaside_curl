@@ -2782,8 +2782,8 @@ ConnectionExists(struct SessionHandle *data,
   struct connectdata *check;
   struct connectdata *chosen = 0;
   bool canPipeline = IsPipeliningPossible(data, needle);
-  bool wantNTLM = (data->state.authhost.want==CURLAUTH_NTLM) ||
-                  (data->state.authhost.want==CURLAUTH_NTLM_WB) ? TRUE : FALSE;
+  bool wantNTLM = (data->state.authhost.want & CURLAUTH_NTLM) ||
+    (data->state.authhost.want & CURLAUTH_NTLM_WB) ? TRUE : FALSE;
   struct connectbundle *bundle;
 
   /* Look up the bundle with all the connections to this

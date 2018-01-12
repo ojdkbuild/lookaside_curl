@@ -140,6 +140,7 @@ my $GOPHER6PORT;         # Gopher IPv6 server port
 my $HTTPTLSPORT;         # HTTP TLS (non-stunnel) server port
 my $HTTPTLS6PORT;        # HTTP TLS (non-stunnel) IPv6 server port
 my $HTTPPROXYPORT;       # HTTP proxy port, when using CONNECT
+my $HTTPUNIXPATH;        # HTTP server UNIX domain socket path
 
 my $srcdir = $ENV{'srcdir'} || '.';
 my $CURL="../src/curl".exe_ext(); # what curl executable to run on the tests
@@ -201,10 +202,12 @@ my $ssl_version; # set if libcurl is built with SSL support
 my $large_file;  # set if libcurl is built with large file support
 my $has_idn;     # set if libcurl is built with IDN support
 my $http_ipv6;   # set if HTTP server has IPv6 support
+my $http_unix;   # set if HTTP server has UNIX sockets support
 my $ftp_ipv6;    # set if FTP server has IPv6 support
 my $tftp_ipv6;   # set if TFTP server has IPv6 support
 my $gopher_ipv6; # set if Gopher server has IPv6 support
 my $has_ipv6;    # set if libcurl is built with IPv6 support
+my $has_unix;    # set if libcurl is built with UNIX sockets support
 my $has_libz;    # set if libcurl is built with libz support
 my $has_getrlimit;  # set if system has getrlimit()
 my $has_ntlm;    # set if libcurl is built with NTLM support
@@ -356,6 +359,13 @@ sub init_serverpidfile_hash {
         my $pidf = server_pidfilename($proto, $ipvnum, $idnum);
         $serverpidfile{$serv} = $pidf;
       }
+    }
+  }
+  for my $proto (('http', 'imap', 'pop3', 'smtp')) {
+    for my $ssl (('', 's')) {
+      my $serv = servername_id("$proto$ssl", "unix", 1);
+      my $pidf = server_pidfilename("$proto$ssl", "unix", 1);
+      $serverpidfile{$serv} = $pidf;
     }
   }
 }
@@ -641,11 +651,11 @@ sub stopserver {
     # All servers relative to the given one must be stopped also
     #
     my @killservers;
-    if($server =~ /^(ftp|http|imap|pop3|smtp)s((\d*)(-ipv6|))$/) {
+    if($server =~ /^(ftp|http|imap|pop3|smtp)s((\d*)(-ipv6|-unix|))$/) {
         # given a stunnel based ssl server, also kill non-ssl underlying one
         push @killservers, "${1}${2}";
     }
-    elsif($server =~ /^(ftp|http|imap|pop3|smtp)((\d*)(-ipv6|))$/) {
+    elsif($server =~ /^(ftp|http|imap|pop3|smtp)((\d*)(-ipv6|-unix|))$/) {
         # given a non-ssl server, also kill stunnel based ssl piggybacking one
         push @killservers, "${1}s${2}";
     }
@@ -691,10 +701,12 @@ sub stopserver {
 # assign requested address")
 #
 sub verifyhttp {
-    my ($proto, $ipvnum, $idnum, $ip, $port) = @_;
+    my ($proto, $ipvnum, $idnum, $ip, $port_or_path) = @_;
     my $server = servername_id($proto, $ipvnum, $idnum);
     my $pid = 0;
     my $bonus="";
+    # $port_or_path contains a path for UNIX sockets, sws ignores the port
+    my $port = ($ipvnum eq "unix") ? 80 : $port_or_path;
 
     my $verifyout = "$LOGDIR/".
         servername_canon($proto, $ipvnum, $idnum) .'_verify.out';
@@ -714,6 +726,7 @@ sub verifyhttp {
     $flags .= "--silent ";
     $flags .= "--verbose ";
     $flags .= "--globoff ";
+    $flags .= "--unix-socket '$port_or_path' " if $ipvnum eq "unix";
     $flags .= "-1 "         if($has_axtls);
     $flags .= "--insecure " if($proto eq 'https');
     $flags .= "\"$proto://$ip:$port/${bonus}verifiedserver\"";
@@ -1160,7 +1173,7 @@ sub responsiveserver {
 # start the http server
 #
 sub runhttpserver {
-    my ($proto, $verbose, $alt, $port) = @_;
+    my ($proto, $verbose, $alt, $port_or_path) = @_;
     my $ip = $HOSTIP;
     my $ipvnum = 4;
     my $idnum = 1;
@@ -1188,6 +1201,10 @@ sub runhttpserver {
     if ($doesntrun{$pidfile}) {
         return (0,0);
     }
+    elsif($alt eq "unix") {
+        # IP (protocol) is mutually exclusive with UNIX sockets
+        $ipvnum = "unix";
+    }
 
     my $pid = processexists($pidfile);
     if($pid > 0) {
@@ -1204,7 +1221,12 @@ sub runhttpserver {
     $flags .= "--verbose " if($debugprotocol);
     $flags .= "--pidfile \"$pidfile\" --logfile \"$logfile\" ";
     $flags .= "--id $idnum " if($idnum > 1);
-    $flags .= "--ipv$ipvnum --port $port --srcdir \"$srcdir\"";
+    if($ipvnum eq "unix") {
+        $flags .= "--unix-socket '$port_or_path' ";
+    } else {
+        $flags .= "--ipv$ipvnum --port $port_or_path ";
+    }
+    $flags .= "--srcdir \"$srcdir\"";
 
     my $cmd = "$perl $srcdir/httpserver.pl $flags";
     my ($httppid, $pid2) = startnew($cmd, $pidfile, 15, 0);
@@ -1219,7 +1241,7 @@ sub runhttpserver {
     }
 
     # Server is up. Verify that we can speak to it.
-    my $pid3 = verifyserver($proto, $ipvnum, $idnum, $ip, $port);
+    my $pid3 = verifyserver($proto, $ipvnum, $idnum, $ip, $port_or_path);
     if(!$pid3) {
         logmsg "RUN: $srvrname server failed verification\n";
         # failed to talk to it properly. Kill the server and return failure
@@ -1984,7 +2006,7 @@ sub runsocksserver {
 # be used to verify that a server present in %run hash is still functional
 #
 sub responsive_http_server {
-    my ($proto, $verbose, $alt, $port) = @_;
+    my ($proto, $verbose, $alt, $port_or_path) = @_;
     my $ip = $HOSTIP;
     my $ipvnum = 4;
     my $idnum = 1;
@@ -1997,8 +2019,12 @@ sub responsive_http_server {
     elsif($alt eq "proxy") {
         $idnum = 2;
     }
+    elsif($alt eq "unix") {
+        # IP (protocol) is mutually exclusive with UNIX sockets
+        $ipvnum = "unix";
+    }
 
-    return &responsiveserver($proto, $ipvnum, $idnum, $ip, $port);
+    return &responsiveserver($proto, $ipvnum, $idnum, $ip, $port_or_path);
 }
 
 #######################################################################
@@ -2264,9 +2290,10 @@ sub checksystem {
             @protocols = split(' ', lc($1));
 
             # Generate a "proto-ipv6" version of each protocol to match the
-            # IPv6 <server> name. This works even if IPv6 support isn't
+            # IPv6 <server> name and a "proto-unix" to match the variant which
+            # uses UNIX domain sockets. This works even if support isn't
             # compiled in because the <features> test will fail.
-            push @protocols, map($_ . '-ipv6', @protocols);
+            push @protocols, map(("$_-ipv6", "$_-unix"), @protocols);
 
             # 'http-proxy' is used in test cases to do CONNECT through
             push @protocols, 'http-proxy';
@@ -2298,6 +2325,9 @@ sub checksystem {
             }
             if($feat =~ /IPv6/i) {
                 $has_ipv6 = 1;
+            }
+            if($feat =~ /unix-sockets/i) {
+                $has_unix = 1;
             }
             if($feat =~ /libz/i) {
                 $has_libz = 1;
@@ -2396,6 +2426,12 @@ sub checksystem {
         }
     }
 
+    if($has_unix) {
+        # client has UNIX sockets support, check whether the HTTP server has it
+        my @sws = `server/sws --version`;
+        $http_unix = 1 if($sws[0] =~ /unix/);
+    }
+
     if(!$curl_debug && $torture) {
         die "can't run torture tests since curl was not built with curldebug";
     }
@@ -2423,6 +2459,7 @@ sub checksystem {
     logmsg sprintf("  track memory: %s\n", $curl_debug?"ON ":"OFF");
     logmsg sprintf("* valgrind:     %8s", $valgrind?"ON ":"OFF");
     logmsg sprintf("  HTTP IPv6     %s\n", $http_ipv6?"ON ":"OFF");
+    logmsg sprintf("* HTTP UNIX     %s\n", $http_unix?"ON ":"OFF");
     logmsg sprintf("* FTP IPv6      %8s", $ftp_ipv6?"ON ":"OFF");
     logmsg sprintf("  Libtool lib:  %s\n", $libtool?"ON ":"OFF");
     logmsg sprintf("* Shared build:      %s\n", $has_shared);
@@ -2473,6 +2510,13 @@ sub checksystem {
         logmsg "\n";
     }
 
+    if($has_unix) {
+        logmsg "* UNIX socket paths:\n";
+        if($http_unix) {
+            logmsg sprintf("*   HTTP-UNIX:%s\n", $HTTPUNIXPATH);
+        }
+    }
+
     $has_textaware = ($^O eq 'MSWin32') || ($^O eq 'msys');
 
     logmsg "***************************************** \n";
@@ -2519,6 +2563,10 @@ sub subVariables {
 
   $$thing =~ s/%TFTP6PORT/$TFTP6PORT/g;
   $$thing =~ s/%TFTPPORT/$TFTPPORT/g;
+
+  # server UNIX domain socket paths
+
+  $$thing =~ s/%HTTPUNIXPATH/$HTTPUNIXPATH/g;
 
   # client IP addresses
 
@@ -2704,6 +2752,11 @@ sub singletest {
         }
         elsif($f eq "ipv6") {
             if($has_ipv6) {
+                next;
+            }
+        }
+        elsif($f eq "unix-sockets") {
+            if($has_unix) {
                 next;
             }
         }
@@ -3219,11 +3272,11 @@ sub singletest {
         my @killservers;
         foreach my $server (@killtestservers) {
             chomp $server;
-            if($server =~ /^(ftp|http|imap|pop3|smtp)s((\d*)(-ipv6|))$/) {
+            if($server =~ /^(ftp|http|imap|pop3|smtp)s((\d*)(-ipv6|-unix|))$/) {
                 # given a stunnel ssl server, also kill non-ssl underlying one
                 push @killservers, "${1}${2}";
             }
-            elsif($server =~ /^(ftp|http|imap|pop3|smtp)((\d*)(-ipv6|))$/) {
+            elsif($server =~ /^(ftp|http|imap|pop3|smtp)((\d*)(-ipv6|-unix|))$/) {
                 # given a non-ssl server, also kill stunnel piggybacking one
                 push @killservers, "${1}s${2}";
             }
@@ -3728,7 +3781,7 @@ sub startservers {
         $what =~ s/[^a-z0-9-]//g;
 
         my $certfile;
-        if($what =~ /^(ftp|http|imap|pop3|smtp)s((\d*)(-ipv6|))$/) {
+        if($what =~ /^(ftp|http|imap|pop3|smtp)s((\d*)(-ipv6|-unix|))$/) {
             $certfile = ($whatlist[1]) ? $whatlist[1] : 'stunnel.pem';
         }
 
@@ -4064,6 +4117,22 @@ sub startservers {
                     logmsg "$sshdverstr insufficient; socks5 tests need at least SunSSH 1.0\n";
                     return "failed starting socks5 server";
                 }
+            }
+        }
+        elsif($what eq "http-unix") {
+            if($torture && $run{'http-unix'} &&
+               !responsive_http_server("http", $verbose, "unix", $HTTPUNIXPATH)) {
+                stopserver('http-unix');
+            }
+            if(!$run{'http-unix'}) {
+                ($pid, $pid2) = runhttpserver("http", $verbose, "unix",
+                                              $HTTPUNIXPATH);
+                if($pid <= 0) {
+                    return "failed starting HTTP-unix server";
+                }
+                logmsg sprintf("* pid http-unix => %d %d\n", $pid, $pid2)
+                    if($verbose);
+                $run{'http-unix'}="$pid $pid2";
             }
         }
         elsif($what eq "none") {
@@ -4502,6 +4571,7 @@ $GOPHER6PORT     = $base++; # Gopher IPv6 server port
 $HTTPTLSPORT     = $base++; # HTTP TLS (non-stunnel) server port
 $HTTPTLS6PORT    = $base++; # HTTP TLS (non-stunnel) IPv6 server port
 $HTTPPROXYPORT   = $base++; # HTTP proxy port, when using CONNECT
+$HTTPUNIXPATH    = 'http.sock'; # HTTP server UNIX domain socket path
 
 #######################################################################
 # clear and create logging directory:

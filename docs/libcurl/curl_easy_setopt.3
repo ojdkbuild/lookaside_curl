@@ -961,6 +961,18 @@ systems support this option. (Added in 7.25.0)
 Pass a long. Sets the interval, in seconds, that the operating system will wait
 between sending keepalive probes. Not all operating systems support this
 option. (Added in 7.25.0)
+.IP CURLOPT_UNIX_SOCKET_PATH
+Pass a \fIpath\fP to a UNIX domain socket. This enables the use of UNIX domain
+sockets as connection end point and sets the path to \fIpath\fP. If \fIpath\fP
+is NULL, then UNIX domain sockets are disabled. An empty string will result in
+an error at some point.
+
+When enabled, cURL will connect to the UNIX domain socket instead of
+establishing a TCP connection to a host. Since no TCP connection is
+established, cURL does not need to resolve the DNS hostname in the URL.
+
+The maximum path length on Cygwin, Linux and Solaris is 107. On other platforms
+might be even less.
 .SH NAMES and PASSWORDS OPTIONS (Authentication)
 .IP CURLOPT_NETRC
 This parameter controls the preference of libcurl between using user names and

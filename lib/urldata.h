@@ -1375,6 +1375,10 @@ enum dupstring {
   STRING_TLSAUTH_PASSWORD,     /* TLS auth <password> */
 #endif
 
+#ifdef USE_UNIX_SOCKETS
+  STRING_UNIX_SOCKET_PATH,  /* path to UNIX socket, if used */
+#endif
+
   /* -- end of zero-terminated strings -- */
 
   STRING_LASTZEROTERMINATED,

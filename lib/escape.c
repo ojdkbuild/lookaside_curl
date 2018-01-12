@@ -80,14 +80,20 @@ char *curl_unescape(const char *string, int length)
 
 char *curl_easy_escape(CURL *handle, const char *string, int inlength)
 {
-  size_t alloc = (inlength?(size_t)inlength:strlen(string))+1;
+  size_t alloc;
   char *ns;
   char *testing_ptr = NULL;
   unsigned char in; /* we need to treat the characters unsigned */
-  size_t newlen = alloc;
+  size_t newlen;
   size_t strindex=0;
   size_t length;
   CURLcode res;
+
+  if(inlength < 0)
+    return NULL;
+
+  alloc = (inlength?(size_t)inlength:strlen(string))+1;
+  newlen = alloc;
 
   ns = malloc(alloc);
   if(!ns)
@@ -213,14 +219,16 @@ char *curl_easy_unescape(CURL *handle, const char *string, int length,
                          int *olen)
 {
   char *str = NULL;
-  size_t inputlen = length;
-  size_t outputlen;
-  CURLcode res = Curl_urldecode(handle, string, inputlen, &str, &outputlen,
-                                FALSE);
-  if(res)
-    return NULL;
-  if(olen)
-    *olen = curlx_uztosi(outputlen);
+  if(length >= 0) {
+    size_t inputlen = length;
+    size_t outputlen;
+    CURLcode res = Curl_urldecode(handle, string, inputlen, &str, &outputlen,
+                                  FALSE);
+    if(res)
+      return NULL;
+    if(olen)
+      *olen = curlx_uztosi(outputlen);
+  }
   return str;
 }
 

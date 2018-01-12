@@ -123,6 +123,7 @@ int curl_win32_idn_to_ascii(const char *in, char **out);
 #include "bundles.h"
 #include "conncache.h"
 #include "multihandle.h"
+#include "strdup.h"
 
 #define _MPRINTF_REPLACE /* use our functions only */
 #include <curl/mprintf.h>
@@ -344,14 +345,24 @@ CURLcode Curl_dupset(struct SessionHandle * dst, struct SessionHandle * src)
   memset(dst->set.str, 0, STRING_LAST * sizeof(char *));
 
   /* duplicate all strings */
-  for(i=(enum dupstring)0; i< STRING_LAST; i++) {
+  for(i=(enum dupstring)0; i< STRING_LASTZEROTERMINATED; i++) {
     r = setstropt(&dst->set.str[i], src->set.str[i]);
     if(r != CURLE_OK)
-      break;
+      return r;
   }
 
-  /* If a failure occurred, freeing has to be performed externally. */
-  return r;
+  /* duplicate memory areas pointed to */
+  i = STRING_COPYPOSTFIELDS;
+  if(src->set.postfieldsize && src->set.str[i]) {
+    /* postfieldsize is curl_off_t, Curl_memdup() takes a size_t ... */
+    dst->set.str[i] = Curl_memdup(src->set.str[i], src->set.postfieldsize);
+    if(!dst->set.str[i])
+      return CURLE_OUT_OF_MEMORY;
+    /* point to the new copy */
+    dst->set.postfields = dst->set.str[i];
+  }
+
+  return CURLE_OK;
 }
 
 /*

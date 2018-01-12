@@ -26,5 +26,6 @@
 #ifndef HAVE_STRDUP
 extern char *curlx_strdup(const char *str);
 #endif
+char *Curl_memdup(const char *src, size_t buffer_length);
 
 #endif /* HEADER_CURL_STRDUP_H */

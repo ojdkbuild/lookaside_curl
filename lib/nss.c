@@ -1603,8 +1603,11 @@ static CURLcode nss_connect_common(struct connectdata *conn, int sockindex,
   const bool blocking = (done == NULL);
   CURLcode rv;
 
-  if(connssl->state == ssl_connection_complete)
+  if(connssl->state == ssl_connection_complete) {
+    if(!blocking)
+      *done = TRUE;
     return CURLE_OK;
+  }
 
   if(connssl->connecting_state == ssl_connect_1) {
     rv = nss_setup_connect(conn, sockindex);

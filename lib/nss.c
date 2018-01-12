@@ -1206,7 +1206,7 @@ static CURLcode nss_init_sslver(SSLVersionRange *sslver,
   switch (data->set.ssl.version) {
   default:
   case CURL_SSLVERSION_DEFAULT:
-    return CURLE_OK;
+    break;
 
   case CURL_SSLVERSION_TLSv1:
     sslver->min = SSL_LIBRARY_VERSION_TLS_1_0;
@@ -1368,10 +1368,12 @@ static CURLcode nss_setup_connect(struct connectdata *conn, int sockindex)
     goto error;
 
   /* enable/disable the requested SSL version(s) */
-  if(nss_init_sslver(&sslver, data) != CURLE_OK)
-    goto error;
-  if(SSL_VersionRangeSet(model, &sslver) != SECSuccess)
-    goto error;
+  if(data->set.ssl.version != CURL_SSLVERSION_DEFAULT) {
+    if(nss_init_sslver(&sslver, data) != CURLE_OK)
+      goto error;
+    if(SSL_VersionRangeSet(model, &sslver) != SECSuccess)
+      goto error;
+  }
 
   ssl_cbc_random_iv = !data->set.ssl_enable_beast;
 #ifdef SSL_CBC_RANDOM_IV

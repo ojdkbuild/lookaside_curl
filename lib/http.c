@@ -1404,6 +1404,18 @@ CURLcode Curl_http_done(struct connectdata *conn,
 
   Curl_unencode_cleanup(conn);
 
+#ifdef USE_HTTP_NEGOTIATE
+  if(data->state.proxyneg.state == GSS_AUTHSENT ||
+     data->state.negotiate.state == GSS_AUTHSENT) {
+    /* add forbid re-use if http-code != 401/407 as a WA only needed for
+     * 401/407 that signal auth failure (empty) otherwise state will be RECV
+     * with current code */
+    if((data->req.httpcode != 401) && (data->req.httpcode != 407))
+      conn->bits.close = TRUE; /* Negotiate transfer completed */
+    Curl_cleanup_negotiate(data);
+  }
+#endif
+
   /* set the proper values (possibly modified on POST) */
   conn->fread_func = data->set.fread_func; /* restore */
   conn->fread_in = data->set.in; /* restore */

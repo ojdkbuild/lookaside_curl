@@ -65,7 +65,9 @@ be listed using uppercase and are separated by newlines. There may be none,
 one, or several protocols in the list. (Added in 7.13.0)
 .IP "--static-libs"
 Shows the complete set of libs and other linker options you will need in order
-to link your application with libcurl statically. (Added in 7.17.1)
+to link your application with libcurl statically. Note that Fedora/RHEL libcurl
+packages do not provide any static libraries, thus cannot be linked statically.
+(Added in 7.17.1)
 .IP "--version"
 Outputs version information about the installed libcurl.
 .IP "--vernum"

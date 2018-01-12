@@ -1137,6 +1137,11 @@ static CURLcode imap_state_fetch_resp(struct connectdata *conn, int imapcode,
         /* the conversion from curl_off_t to size_t is always fine here */
         chunk = (size_t)filesize;
 
+      if(!chunk) {
+        /* no size, we're done with the data */
+        state(conn, IMAP_STOP);
+        return CURLE_OK;
+      }
       result = Curl_client_write(conn, CLIENTWRITE_BODY, pp->cache, chunk);
       if(result)
         return result;

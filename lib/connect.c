@@ -758,7 +758,8 @@ CURLcode Curl_is_connected(struct connectdata *conn,
     error = SOCKERRNO;
     data->state.os_errno = error;
     failf(data, "Failed connect to %s:%ld; %s",
-          conn->host.name, conn->port, Curl_strerror(conn, error));
+          conn->bits.proxy?conn->proxy.name:conn->host.name,
+          conn->port, Curl_strerror(conn, error));
   }
 
   return code;

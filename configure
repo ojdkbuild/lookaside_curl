@@ -913,7 +913,7 @@ LIBMETALINK_LIBS
 CURL_CA_BUNDLE
 SSL_ENABLED
 USE_AXTLS
-HAVE_NSS_INITCONTEXT
+NSS_LIBS
 USE_NSS
 USE_CYASSL
 USE_POLARSSL
@@ -23696,6 +23696,9 @@ fi
       if test "x$USE_NSS" = "xyes"; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: detected NSS version $version" >&5
 $as_echo "$as_me: detected NSS version $version" >&6;}
+
+                NSS_LIBS=$addlib
+
 
                                         if test "x$cross_compiling" != "xyes"; then
           LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nssprefix/lib$libsuff"

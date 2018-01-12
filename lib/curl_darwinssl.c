@@ -719,6 +719,18 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
         (void)SSLSetProtocolVersionMin(connssl->ssl_ctx, kTLSProtocol1);
         (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kTLSProtocol12);
         break;
+      case CURL_SSLVERSION_TLSv1_0:
+        (void)SSLSetProtocolVersionMin(connssl->ssl_ctx, kTLSProtocol1);
+        (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kTLSProtocol1);
+        break;
+      case CURL_SSLVERSION_TLSv1_1:
+        (void)SSLSetProtocolVersionMin(connssl->ssl_ctx, kTLSProtocol11);
+        (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kTLSProtocol11);
+        break;
+      case CURL_SSLVERSION_TLSv1_2:
+        (void)SSLSetProtocolVersionMin(connssl->ssl_ctx, kTLSProtocol12);
+        (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kTLSProtocol12);
+        break;
       case CURL_SSLVERSION_SSLv3:
         (void)SSLSetProtocolVersionMin(connssl->ssl_ctx, kSSLProtocol3);
         (void)SSLSetProtocolVersionMax(connssl->ssl_ctx, kSSLProtocol3);
@@ -759,6 +771,21 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
                                            kTLSProtocol12,
                                            true);
         break;
+      case CURL_SSLVERSION_TLSv1_0:
+        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                           kTLSProtocol1,
+                                           true);
+        break;
+      case CURL_SSLVERSION_TLSv1_1:
+        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                           kTLSProtocol11,
+                                           true);
+        break;
+      case CURL_SSLVERSION_TLSv1_2:
+        (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
+                                           kTLSProtocol12,
+                                           true);
+        break;
       case CURL_SSLVERSION_SSLv3:
         (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
                                            kSSLProtocol3,
@@ -785,10 +812,17 @@ static CURLcode darwinssl_connect_step1(struct connectdata *conn,
                                          true);
       break;
     case CURL_SSLVERSION_TLSv1:
+    case CURL_SSLVERSION_TLSv1_0:
       (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
                                          kTLSProtocol1,
                                          true);
       break;
+    case CURL_SSLVERSION_TLSv1_1:
+      failf(data, "Your version of the OS does not support TLSv1.1");
+      return CURLE_SSL_CONNECT_ERROR;
+    case CURL_SSLVERSION_TLSv1_2:
+      failf(data, "Your version of the OS does not support TLSv1.2");
+      return CURLE_SSL_CONNECT_ERROR;
     case CURL_SSLVERSION_SSLv2:
       (void)SSLSetProtocolVersionEnabled(connssl->ssl_ctx,
                                          kSSLProtocol2,

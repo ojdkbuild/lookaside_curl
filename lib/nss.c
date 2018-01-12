@@ -1491,9 +1491,17 @@ static CURLcode nss_setup_connect(struct connectdata *conn, int sockindex)
   }
 
   /* Force handshake on next I/O */
-  SSL_ResetHandshake(connssl->handle, /* asServer */ PR_FALSE);
+  if(SSL_ResetHandshake(connssl->handle, /* asServer */ PR_FALSE)
+      != SECSuccess)
+    goto error;
 
-  SSL_SetURL(connssl->handle, conn->host.name);
+  /* propagate hostname to the TLS layer */
+  if(SSL_SetURL(connssl->handle, conn->host.name) != SECSuccess)
+    goto error;
+
+  /* prevent NSS from re-using the session for a different hostname */
+  if(SSL_SetSockPeerID(connssl->handle, conn->host.name) != SECSuccess)
+    goto error;
 
   return CURLE_OK;
 

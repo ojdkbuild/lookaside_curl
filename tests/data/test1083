@@ -33,13 +33,13 @@ ipv6
 http-ipv6
 </server>
  <name>
-HTTP-IPv6 GET with ip6-localhost --interface
+HTTP-IPv6 GET with localhost6 --interface
  </name>
  <command>
--g "http://%HOST6IP:%HTTP6PORT/1083" --interface ip6-localhost
+-g "http://%HOST6IP:%HTTP6PORT/1083" --interface localhost6
 </command>
 <precheck>
-perl -e "if ('%CLIENT6IP' ne '[::1]') {print 'Test requires default test server host address';} else {exec './server/resolve --ipv6 ip6-localhost'; print 'Cannot run precheck resolve';}"
+perl -e "if ('%CLIENT6IP' ne '[::1]') {print 'Test requires default test server host address';} else {exec './server/resolve --ipv6 localhost6'; print 'Cannot run precheck resolve';}"
 </precheck>
 </client>
 

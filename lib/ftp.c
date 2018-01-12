@@ -877,14 +877,9 @@ static int ftp_domore_getsock(struct connectdata *conn, curl_socket_t *socks,
     return GETSOCK_BLANK;
 
   /* When in DO_MORE state, we could be either waiting for us to connect to a
-     remote site, or we could wait for that site to connect to us. Or just
-     handle ordinary commands.
-
-     When waiting for a connect, we will be in FTP_STOP state and then we wait
-     for the secondary socket to become writeable. If we're in another state,
-     we're still handling commands on the control (primary) connection.
-
-  */
+   * remote site, or we could wait for that site to connect to us. Or just
+   * handle ordinary commands.
+   */
 
   switch(ftpc->state) {
   case FTP_STOP:
@@ -893,13 +888,12 @@ static int ftp_domore_getsock(struct connectdata *conn, curl_socket_t *socks,
     return Curl_pp_getsock(&conn->proto.ftpc.pp, socks, numsocks);
   }
 
-  socks[0] = conn->sock[SECONDARYSOCKET];
-  if(ftpc->wait_data_conn) {
-    socks[1] = conn->sock[FIRSTSOCKET];
-    return GETSOCK_READSOCK(0) | GETSOCK_READSOCK(1);
-  }
+  /* if stopped and still in this state, then we're also waiting for a
+     connect on the secondary connection */
+  socks[0] = conn->sock[FIRSTSOCKET];
+  socks[1] = conn->sock[SECONDARYSOCKET];
 
-  return GETSOCK_READSOCK(0);
+  return GETSOCK_READSOCK(FIRSTSOCKET) | GETSOCK_WRITESOCK(SECONDARYSOCKET);
 }
 
 /* This is called after the FTP_QUOTE state is passed.
@@ -2420,6 +2414,8 @@ static CURLcode ftp_state_stor_resp(struct connectdata *conn,
   /* PORT means we are now awaiting the server to connect to us. */
   if(data->set.ftp_use_port) {
     bool connected;
+
+    state(conn, FTP_STOP); /* no longer in STOR state */
 
     result = AllowServerConnect(conn, &connected);
     if(result)

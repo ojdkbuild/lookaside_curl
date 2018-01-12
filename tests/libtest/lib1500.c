@@ -61,11 +61,6 @@ int test(char *URL)
       res = -1;
       goto test_cleanup;
     }
-    if (num != 1) {
-      printf("curl_multi_wait() returned on %d handle(s), expected 1\n", num);
-      res = -1;
-      goto test_cleanup;
-    }
 
     abort_on_test_timeout();
 

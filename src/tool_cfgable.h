@@ -172,6 +172,7 @@ struct Configurable {
                                  * default rcmd */
   int socks5_gssapi_nec ;   /* The NEC reference server does not protect
                              * the encryption type exchange */
+  unsigned long socks5_auth;/* auth bitmask for socks5 proxies */
 
   bool tcp_nodelay;
   long req_retry;           /* number of retries */

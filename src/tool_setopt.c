@@ -130,6 +130,7 @@ const NameValue setopt_nv_CURLPROTO[] = {
 static const NameValue setopt_nv_CURLNONZERODEFAULTS[] = {
   NV1(CURLOPT_SSL_VERIFYPEER, 1),
   NV1(CURLOPT_SSL_VERIFYHOST, 1),
+  NV1(CURLOPT_SOCKS5_AUTH, 1),
   NVEND
 };
 

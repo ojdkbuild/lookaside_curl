@@ -106,7 +106,7 @@ int Curl_blockread_all(struct connectdata *conn, /* connection data */
 *   Set protocol4a=true for  "SOCKS 4A (Simple Extension to SOCKS 4 Protocol)"
 *   Nonsupport "Identification Protocol (RFC1413)"
 */
-CURLcode Curl_SOCKS4(const char *proxy_name,
+CURLcode Curl_SOCKS4(const char *proxy_user,
                      const char *hostname,
                      int remote_port,
                      int sockindex,
@@ -200,8 +200,8 @@ CURLcode Curl_SOCKS4(const char *proxy_name,
    * This is currently not supporting "Identification Protocol (RFC1413)".
    */
   socksreq[8] = 0; /* ensure empty userid is NUL-terminated */
-  if(proxy_name)
-    strlcat((char*)socksreq + 8, proxy_name, sizeof(socksreq) - 8);
+  if(proxy_user)
+    strlcat((char*)socksreq + 8, proxy_user, sizeof(socksreq) - 8);
 
   /*
    * Make connection
@@ -337,7 +337,7 @@ CURLcode Curl_SOCKS4(const char *proxy_name,
  * This function logs in to a SOCKS5 proxy and sends the specifics to the final
  * destination server.
  */
-CURLcode Curl_SOCKS5(const char *proxy_name,
+CURLcode Curl_SOCKS5(const char *proxy_user,
                      const char *proxy_password,
                      const char *hostname,
                      int remote_port,
@@ -362,6 +362,7 @@ CURLcode Curl_SOCKS5(const char *proxy_name,
   */
 
   unsigned char socksreq[600]; /* room for large user/pw (255 max each) */
+  int idx;
   ssize_t actualread;
   ssize_t written;
   int result;
@@ -372,6 +373,8 @@ CURLcode Curl_SOCKS5(const char *proxy_name,
   bool socks5_resolve_local = (conn->proxytype == CURLPROXY_SOCKS5)?TRUE:FALSE;
   const size_t hostname_len = strlen(hostname);
   ssize_t len = 0;
+  const unsigned long auth = data->set.socks5auth;
+  bool allow_gssapi = FALSE;
 
   /* RFC1928 chapter 5 specifies max 255 chars for domain name in packet */
   if(!socks5_resolve_local && hostname_len > 255) {
@@ -408,17 +411,28 @@ CURLcode Curl_SOCKS5(const char *proxy_name,
     return CURLE_COULDNT_CONNECT;
   }
 
-  socksreq[0] = 5; /* version */
+  if(auth & ~(CURLAUTH_BASIC | CURLAUTH_GSSAPI))
+    infof(conn->data,
+        "warning: unsupported value passed to CURLOPT_SOCKS5_AUTH: %lu\n",
+        auth);
+  if(!(auth & CURLAUTH_BASIC))
+    /* disable username/password auth */
+    proxy_user = NULL;
 #if defined(HAVE_GSSAPI) || defined(USE_WINDOWS_SSPI)
-  socksreq[1] = (char)(proxy_name ? 3 : 2); /* number of methods (below) */
-  socksreq[2] = 0; /* no authentication */
-  socksreq[3] = 1; /* gssapi */
-  socksreq[4] = 2; /* username/password */
-#else
-  socksreq[1] = (char)(proxy_name ? 2 : 1); /* number of methods (below) */
-  socksreq[2] = 0; /* no authentication */
-  socksreq[3] = 2; /* username/password */
+  if(auth & CURLAUTH_GSSAPI)
+    allow_gssapi = TRUE;
 #endif
+
+  idx = 0;
+  socksreq[idx++] = 5;   /* version */
+  idx++;                 /* reserve for the number of authentication methods */
+  socksreq[idx++] = 0;   /* no authentication */
+  if(allow_gssapi)
+    socksreq[idx++] = 1; /* GSS-API */
+  if(proxy_user)
+    socksreq[idx++] = 2; /* username/password */
+  /* write the number of authentication methods */
+  socksreq[1] = (unsigned char) (idx - 2);
 
   curlx_nonblock(sock, FALSE);
 
@@ -464,7 +478,7 @@ CURLcode Curl_SOCKS5(const char *proxy_name,
     ;
   }
 #if defined(HAVE_GSSAPI) || defined(USE_WINDOWS_SSPI)
-  else if(socksreq[1] == 1) {
+  else if(allow_gssapi && (socksreq[1] == 1)) {
     code = Curl_SOCKS5_gssapi_negotiate(sockindex, conn);
     if(code != CURLE_OK) {
       failf(data, "Unable to negotiate SOCKS5 gssapi context.");
@@ -474,13 +488,13 @@ CURLcode Curl_SOCKS5(const char *proxy_name,
 #endif
   else if(socksreq[1] == 2) {
     /* Needs user name and password */
-    size_t proxy_name_len, proxy_password_len;
-    if(proxy_name && proxy_password) {
-      proxy_name_len = strlen(proxy_name);
+    size_t proxy_user_len, proxy_password_len;
+    if(proxy_user && proxy_password) {
+      proxy_user_len = strlen(proxy_user);
       proxy_password_len = strlen(proxy_password);
     }
     else {
-      proxy_name_len = 0;
+      proxy_user_len = 0;
       proxy_password_len = 0;
     }
 
@@ -493,10 +507,10 @@ CURLcode Curl_SOCKS5(const char *proxy_name,
      */
     len = 0;
     socksreq[len++] = 1;    /* username/pw subnegotiation version */
-    socksreq[len++] = (unsigned char) proxy_name_len;
-    if(proxy_name && proxy_name_len)
-      memcpy(socksreq + len, proxy_name, proxy_name_len);
-    len += proxy_name_len;
+    socksreq[len++] = (unsigned char) proxy_user_len;
+    if(proxy_user && proxy_user_len)
+      memcpy(socksreq + len, proxy_user, proxy_user_len);
+    len += proxy_user_len;
     socksreq[len++] = (unsigned char) proxy_password_len;
     if(proxy_password && proxy_password_len)
       memcpy(socksreq + len, proxy_password, proxy_password_len);
@@ -525,17 +539,13 @@ CURLcode Curl_SOCKS5(const char *proxy_name,
   }
   else {
     /* error */
-#if defined(HAVE_GSSAPI) || defined(USE_WINDOWS_SSPI)
-    if(socksreq[1] == 255) {
-#else
-    if(socksreq[1] == 1) {
+    if(!allow_gssapi && (socksreq[1] == 1)) {
       failf(data,
             "SOCKS5 GSSAPI per-message authentication is not supported.");
       return CURLE_COULDNT_CONNECT;
     }
     else if(socksreq[1] == 255) {
-#endif
-      if(!proxy_name || !*proxy_name) {
+      if(!proxy_user || !*proxy_user) {
         failf(data,
               "No authentication method was acceptable. (It is quite likely"
               " that the SOCKS5 server wanted a username/password, since none"

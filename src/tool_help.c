@@ -179,6 +179,8 @@ static const char *const helptext[] = {
   "     --socks4 HOST[:PORT]  SOCKS4 proxy on given host + port",
   "     --socks4a HOST[:PORT]  SOCKS4a proxy on given host + port",
   "     --socks5 HOST[:PORT]  SOCKS5 proxy on given host + port",
+  "     --socks5-basic  Enable username/password auth for SOCKS5 proxies",
+  "     --socks5-gssapi Enable GSS-API auth for SOCKS5 proxies",
   "     --socks5-hostname HOST[:PORT] "
   "SOCKS5 proxy, pass host name to proxy",
 #if defined(HAVE_GSSAPI) || defined(USE_WINDOWS_SSPI)

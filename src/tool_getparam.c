@@ -210,6 +210,8 @@ static const struct LongShort aliases[]= {
   {"El", "tlspassword",              TRUE},
   {"Em", "tlsauthtype",              TRUE},
   {"En", "ssl-allow-beast",          FALSE},
+  {"EA", "socks5-basic",             FALSE},
+  {"EB", "socks5-gssapi",            FALSE},
   {"f",  "fail",                     FALSE},
   {"F",  "form",                     TRUE},
   {"Fs", "form-string",              TRUE},
@@ -1323,6 +1325,20 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
       case 'n': /* no empty SSL fragments */
         if(curlinfo->features & CURL_VERSION_SSL)
           config->ssl_allow_beast = toggle;
+        break;
+      case 'A':
+        /* --socks5-basic */
+        if(toggle)
+          config->socks5_auth |= CURLAUTH_BASIC;
+        else
+          config->socks5_auth &= ~CURLAUTH_BASIC;
+        break;
+      case 'B':
+        /* --socks5-gssapi */
+        if(toggle)
+          config->socks5_auth |= CURLAUTH_GSSAPI;
+        else
+          config->socks5_auth &= ~CURLAUTH_GSSAPI;
         break;
       default: /* certificate file */
       {

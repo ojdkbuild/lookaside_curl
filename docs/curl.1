@@ -1343,6 +1343,16 @@ Since 7.21.7, this option is superfluous since you can specify a socks4a proxy
 with \fI-x, --proxy\fP using a socks4a:// protocol prefix.
 
 If this option is used several times, the last one will be used.
+.IP "--socks5-basic"
+Tells curl to use username/password authentication when connecting to a SOCKS5
+proxy.  The username/password authentication is enabled by default.  Use
+\fI--socks5-gssapi\fP to force GSS-API authentication to SOCKS5 proxies.
+(Added in 7.55.0)
+.IP "--socks5-gssapi"
+Tells curl to use GSS-API authentication when connecting to a SOCKS5 proxy.
+The GSS-API authentication is enabled by default (if curl is compiled with
+GSS-API support).  Use \fI--socks5-basic\fP to force username/password
+authentication to SOCKS5 proxies.  (Added in 7.55.0)
 .IP "--socks5-hostname <host[:port]>"
 Use the specified SOCKS5 proxy (and let the proxy resolve the host name). If
 the port number is not specified, it is assumed at port 1080. (Added in

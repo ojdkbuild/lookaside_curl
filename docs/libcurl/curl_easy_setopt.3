@@ -862,6 +862,14 @@ Set the parameter to 1 to make the library tunnel all operations through a
 given HTTP proxy. There is a big difference between using a proxy and to
 tunnel through it. If you don't know what this means, you probably don't want
 this tunneling option.
+.IP CURLOPT_SOCKS5_AUTH
+Pass a long as parameter, which is set to a bitmask, to tell libcurl which
+authentication method(s) are allowed for SOCKS5 proxy authentication.  The only
+supported flags are \fICURLAUTH_BASIC\fP, which allows username/password
+authentication, \fICURLAUTH_GSSAPI\fP, which allows GSS-API authentication, and
+\fICURLAUTH_NONE\fP, which allows no authentication.  Set the actual user name
+and password with the \fICURLOPT_PROXYUSERPWD(3)\fP option.  Defaults to
+\fICURLAUTH_BASIC|CURLAUTH_GSSAPI\fP.  (Added in 7.55.0)
 .IP CURLOPT_SOCKS5_GSSAPI_SERVICE
 Pass a char * as parameter to a string holding the name of the service. The
 default service name for a SOCKS5 server is rcmd/server-fqdn. This option

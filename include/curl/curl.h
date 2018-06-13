@@ -626,6 +626,9 @@ typedef enum {
 #define CURLAUTH_ANY          (~CURLAUTH_DIGEST_IE)
 #define CURLAUTH_ANYSAFE      (~(CURLAUTH_BASIC|CURLAUTH_DIGEST_IE))
 
+/* Used for CURLOPT_SOCKS5_AUTH to stay terminologically correct */
+#define CURLAUTH_GSSAPI CURLAUTH_GSSNEGOTIATE
+
 #define CURLSSH_AUTH_ANY       ~0     /* all types supported by the server */
 #define CURLSSH_AUTH_NONE      0      /* none allowed, silly but complete */
 #define CURLSSH_AUTH_PUBLICKEY (1<<0) /* public/private key files */
@@ -1538,6 +1541,9 @@ typedef enum {
 
   /* Path to UNIX domain socket */
   CINIT(UNIX_SOCKET_PATH, OBJECTPOINT, 231),
+
+  /* bitmask of allowed auth methods for connections to SOCKS5 proxies */
+  CINIT(SOCKS5_AUTH, LONG, 267),
 
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;

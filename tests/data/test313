@@ -35,8 +35,5 @@ perl -e "print 'Test requires default test server host' if ( '%HOSTIP' ne '127.0
 <errorcode>
 60
 </errorcode>
-<valgrind>
-disable
-</valgrind>
 </verify>
 </testcase>

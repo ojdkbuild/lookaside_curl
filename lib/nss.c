@@ -551,7 +551,7 @@ fail:
 static CURLcode nss_load_key(struct connectdata *conn, int sockindex,
                              char *key_file)
 {
-  PK11SlotInfo *slot;
+  PK11SlotInfo *slot, *tmp;
   SECStatus status;
   CURLcode rv;
   struct ssl_connect_data *ssl = conn->ssl;
@@ -568,7 +568,9 @@ static CURLcode nss_load_key(struct connectdata *conn, int sockindex,
     return CURLE_SSL_CERTPROBLEM;
 
   /* This will force the token to be seen as re-inserted */
-  SECMOD_WaitForAnyTokenEvent(mod, 0, 0);
+  tmp = SECMOD_WaitForAnyTokenEvent(mod, 0, 0);
+  if(tmp)
+    PK11_FreeSlot(tmp);
   PK11_IsPresent(slot);
 
   status = PK11_Authenticate(slot, PR_TRUE,

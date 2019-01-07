@@ -37,7 +37,6 @@ CERTFILES = \
   Server-localhost-sv.der \
   Server-localhost-sv.dhp \
   Server-localhost-sv.key \
-  Server-localhost-sv.p12 \
   Server-localhost-sv.pem \
   Server-localhost-sv.prm \
   Server-localhost.nn-sv.crl \
@@ -54,7 +53,6 @@ CERTFILES = \
   Server-localhost0h-sv.der \
   Server-localhost0h-sv.dhp \
   Server-localhost0h-sv.key \
-  Server-localhost0h-sv.p12 \
   Server-localhost0h-sv.pem \
   Server-localhost0h-sv.prm
 

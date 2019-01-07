@@ -666,7 +666,7 @@ Curl_http_output_auth(struct connectdata *conn,
   if(!data->state.this_is_a_follow ||
      conn->bits.netrc ||
      !data->state.first_host ||
-     data->set.http_disable_hostname_check_before_authentication ||
+     data->set.allow_auth_to_other_hosts ||
      Curl_raw_equal(data->state.first_host, conn->host.name)) {
     result = output_auth_headers(conn, authhost, request, path, FALSE);
   }
@@ -1549,6 +1549,14 @@ CURLcode Curl_add_custom_headers(struct connectdata *conn,
                 /* when asking for Transfer-Encoding, don't pass on a custom
                    Connection: */
                 checkprefix("Connection", headers->data))
+          ;
+        else if(checkprefix("Authorization:", headers->data) &&
+                /* be careful of sending this potentially sensitive header to
+                   other hosts */
+                (conn->data->state.this_is_a_follow &&
+                 conn->data->state.first_host &&
+                 !conn->data->set.allow_auth_to_other_hosts &&
+                 !strequal(conn->data->state.first_host, conn->host.name)))
           ;
         else {
           CURLcode result = Curl_add_bufferf(req_buffer, "%s\r\n",

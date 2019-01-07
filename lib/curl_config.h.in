@@ -503,6 +503,9 @@
 /* Define to 1 if you have the `pipe' function. */
 #undef HAVE_PIPE
 
+/* if you have the PK11_CreateManagedGenericObject function */
+#undef HAVE_PK11_CREATEMANAGEDGENERICOBJECT
+
 /* Define to 1 if you have a working poll function. */
 #undef HAVE_POLL
 

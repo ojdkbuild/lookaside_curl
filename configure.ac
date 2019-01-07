@@ -2216,6 +2216,15 @@ if test "$curl_ssl_msg" = "$init_ssl_msg"; then
         NSS_LIBS=$addlib
         AC_SUBST([NSS_LIBS])
 
+        dnl PK11_CreateManagedGenericObject() was introduced in NSS 3.34 because
+        dnl PK11_DestroyGenericObject() does not release resources allocated by
+        dnl PK11_CreateGenericObject() early enough.
+        AC_CHECK_FUNC(PK11_CreateManagedGenericObject,
+          [
+            AC_DEFINE(HAVE_PK11_CREATEMANAGEDGENERICOBJECT, 1,
+                      [if you have the PK11_CreateManagedGenericObject function])
+          ])
+
         dnl when shared libs were found in a path that the run-time
         dnl linker doesn't search through, we need to add it to
         dnl LD_LIBRARY_PATH to prevent further configure tests to fail

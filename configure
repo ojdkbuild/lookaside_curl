@@ -23753,6 +23753,16 @@ $as_echo "$as_me: detected NSS version $version" >&6;}
                 NSS_LIBS=$addlib
 
 
+                                ac_fn_c_check_func "$LINENO" "PK11_CreateManagedGenericObject" "ac_cv_func_PK11_CreateManagedGenericObject"
+if test "x$ac_cv_func_PK11_CreateManagedGenericObject" = xyes; then :
+
+
+$as_echo "#define HAVE_PK11_CREATEMANAGEDGENERICOBJECT 1" >>confdefs.h
+
+
+fi
+
+
                                         if test "x$cross_compiling" != "xyes"; then
           LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nssprefix/lib$libsuff"
           export LD_LIBRARY_PATH

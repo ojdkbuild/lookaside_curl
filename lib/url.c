@@ -441,6 +441,7 @@ CURLcode Curl_close(struct SessionHandle *data)
   }
   data->change.url = NULL;
 
+  Curl_safefree(data->state.buffer);
   Curl_safefree(data->state.headerbuff);
 
   Curl_flush_cookies(data, 1);
@@ -576,6 +577,8 @@ CURLcode Curl_init_userdefined(struct UserDefined *set)
   set->tcp_keepintvl = 60;
   set->tcp_keepidle = 60;
 
+  set->buffer_size = BUFSIZE;
+
   return res;
 }
 
@@ -612,6 +615,12 @@ CURLcode Curl_open(struct SessionHandle **curl)
 
   /* We do some initial setup here, all those fields that can't be just 0 */
 
+  data->state.buffer = malloc(BUFSIZE + 1);
+  if(!data->state.buffer) {
+    DEBUGF(fprintf(stderr, "Error: malloc of buffer failed\n"));
+    res = CURLE_OUT_OF_MEMORY;
+  }
+
   data->state.headerbuff = malloc(HEADERSIZE);
   if(!data->state.headerbuff) {
     DEBUGF(fprintf(stderr, "Error: malloc of headerbuff failed\n"));
@@ -642,8 +651,8 @@ CURLcode Curl_open(struct SessionHandle **curl)
 
   if(res) {
     Curl_resolver_cleanup(data->state.resolver);
-    if(data->state.headerbuff)
-      free(data->state.headerbuff);
+    free(data->state.buffer);
+    free(data->state.headerbuff);
     Curl_freeset(data);
     free(data);
     data = NULL;
@@ -1958,11 +1967,25 @@ CURLcode Curl_setopt(struct SessionHandle *data, CURLoption option,
      * The application kindly asks for a differently sized receive buffer.
      * If it seems reasonable, we'll use it.
      */
-    data->set.buffer_size = va_arg(param, long);
+    arg = va_arg(param, long);
 
-    if((data->set.buffer_size> (BUFSIZE -1 )) ||
-       (data->set.buffer_size < 1))
-      data->set.buffer_size = 0; /* huge internal default */
+    if(arg > MAX_BUFSIZE)
+      arg = MAX_BUFSIZE; /* huge internal default */
+    else if(arg < 1)
+      arg = BUFSIZE;
+    else if(arg < MIN_BUFSIZE)
+      arg = BUFSIZE;
+
+    /* Resize only if larger than default buffer size. */
+    if(arg > BUFSIZE) {
+      data->state.buffer = realloc(data->state.buffer,
+                                   data->set.buffer_size + 1);
+      if(!data->state.buffer) {
+        DEBUGF(fprintf(stderr, "Error: realloc of buffer failed\n"));
+        result = CURLE_OUT_OF_MEMORY;
+      }
+    }
+    data->set.buffer_size = arg;
 
     break;
 

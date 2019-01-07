@@ -196,6 +196,9 @@
 /* Download buffer size, keep it fairly big for speed reasons */
 #undef BUFSIZE
 #define BUFSIZE CURL_MAX_WRITE_SIZE
+#undef MAX_BUFSIZE
+#define MAX_BUFSIZE CURL_MAX_READ_SIZE
+#define MIN_BUFSIZE 1024
 
 /* Initial size of the buffer to store headers in, it'll be enlarged in case
    of need. */
@@ -1174,7 +1177,7 @@ struct UrlState {
   char *headerbuff; /* allocated buffer to store headers in */
   size_t headersize;   /* size of the allocation */
 
-  char buffer[BUFSIZE+1]; /* download buffer */
+  char *buffer; /* download buffer */
   char uploadbuffer[BUFSIZE+1]; /* upload buffer */
   curl_off_t current_speed;  /* the ProgressShow() funcion sets this,
                                 bytes / second */

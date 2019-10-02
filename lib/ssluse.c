@@ -190,8 +190,8 @@ static bool rand_enough(int nread)
 
 static int ossl_seed(struct SessionHandle *data)
 {
-  char *buf = data->state.buffer; /* point to the big buffer */
   int nread=0;
+  char fname[256];
 
   /* Q: should we add support for a random file name as a libcurl option?
      A: Yes, it is here */
@@ -259,11 +259,11 @@ static int ossl_seed(struct SessionHandle *data)
   }
 
   /* generates a default path for the random seed file */
-  buf[0]=0; /* blank it first */
-  RAND_file_name(buf, BUFSIZE);
-  if(buf[0]) {
+  fname[0]=0; /* blank it first */
+  RAND_file_name(fname, sizeof(fname));
+  if(fname[0]) {
     /* we got a file name to try */
-    nread += RAND_load_file(buf, RAND_LOAD_LENGTH);
+    nread += RAND_load_file(fname, RAND_LOAD_LENGTH);
     if(seed_enough(nread))
       return nread;
   }
@@ -2225,7 +2225,7 @@ static CURLcode servercert(struct connectdata *conn,
   struct SessionHandle *data = conn->data;
   X509 *issuer;
   FILE *fp;
-  char *buffer = data->state.buffer;
+  char buffer[2048];
 
   if(data->set.ssl.certinfo)
     /* we've been asked to gather certificate info! */
@@ -2242,7 +2242,7 @@ static CURLcode servercert(struct connectdata *conn,
   infof (data, "Server certificate:\n");
 
   rc = x509_name_oneline(X509_get_subject_name(connssl->server_cert),
-                         buffer, BUFSIZE);
+                         buffer, sizeof(buffer));
   if(rc) {
     if(strict)
       failf(data, "SSL: couldn't get X509-subject!");
@@ -2253,11 +2253,11 @@ static CURLcode servercert(struct connectdata *conn,
   infof(data, "\t subject: %s\n", buffer);
 
   certdate = X509_get_notBefore(connssl->server_cert);
-  asn1_output(certdate, buffer, BUFSIZE);
+  asn1_output(certdate, buffer, sizeof(buffer));
   infof(data, "\t start date: %s\n", buffer);
 
   certdate = X509_get_notAfter(connssl->server_cert);
-  asn1_output(certdate, buffer, BUFSIZE);
+  asn1_output(certdate, buffer, sizeof(buffer));
   infof(data, "\t expire date: %s\n", buffer);
 
   if(data->set.ssl.verifyhost) {
@@ -2270,7 +2270,7 @@ static CURLcode servercert(struct connectdata *conn,
   }
 
   rc = x509_name_oneline(X509_get_issuer_name(connssl->server_cert),
-                         buffer, BUFSIZE);
+                         buffer, sizeof(buffer));
   if(rc) {
     if(strict)
       failf(data, "SSL: couldn't get X509-issuer name!");

@@ -28,7 +28,8 @@ test200 test201 test202 test203 test204 test205 test206 test207 test208	\
 test209 test210 test211 test212 test213 test214 test215 test216 test217	\
 test218 test220 test221 test222 test223 test224 test225 test226 test227	\
 test228 test229 test231 test233 test234 test235 test236 test237 test238	\
-test239 test240 test241 test242 test243 test245 test246 test247 test248	\
+test239 test240 test241 test242 test243	\
+test244 test245 test246 test247 test248	\
 test249 test250 test251 test252 test253 test254 test255 test256 test257	\
 test258 test259 test260 test261 test262 test263 test264 test265 test266	\
 test267 test268 test269 test270 test271 test272 test273 test274 test275	\
@@ -38,6 +39,7 @@ test294 test295 test296 test297 test298 test299 test300 test301 test302	\
 test303 test304 test305 test306 test307 test308 test309 test310 test311	\
 test312 test313 test317 test318 \
 test320 test321 test322 test323 test324 test350 test351	\
+test340	\
 test352 test353 test354 test400 test401 test402 test403 test404 test405	\
 test406 test407 test408 test409 test500 test501 test502 test503 test504	\
 test505 test506 test507 test508 test510 test511 test512 test513 test514	\

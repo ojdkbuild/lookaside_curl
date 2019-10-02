@@ -667,6 +667,9 @@ CURLcode Curl_open(struct SessionHandle **curl)
   return res;
 }
 
+#define C_SSLVERSION_VALUE(x) (x & 0xffff)
+#define C_SSLVERSION_MAX_VALUE(x) (x & 0xffff0000)
+
 CURLcode Curl_setopt(struct SessionHandle *data, CURLoption option,
                      va_list param)
 {
@@ -882,7 +885,9 @@ CURLcode Curl_setopt(struct SessionHandle *data, CURLoption option,
      * Set explicit SSL version to try to connect with, as some SSL
      * implementations are lame.
      */
-    data->set.ssl.version = va_arg(param, long);
+    arg = va_arg(param, long);
+    data->set.ssl.version = C_SSLVERSION_VALUE(arg);
+    data->set.ssl.version_max = C_SSLVERSION_MAX_VALUE(arg);
     break;
 
 #ifndef CURL_DISABLE_HTTP

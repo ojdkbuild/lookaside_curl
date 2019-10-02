@@ -205,6 +205,8 @@ static const char *const helptext[] = {
   "     --tlsv1.0       Use TLSv1.0 (SSL)",
   "     --tlsv1.1       Use TLSv1.1 (SSL)",
   "     --tlsv1.2       Use TLSv1.2 (SSL)",
+  "     --tlsv1.3       Use TLSv1.3 (SSL)",
+  "     --tls-max VERSION  Use TLS up to VERSION (SSL)",
   "     --trace FILE    Write a debug trace to the given file",
   "     --trace-ascii FILE  Like --trace but without the hex output",
   "     --trace-time    Add time stamps to trace/verbose output",

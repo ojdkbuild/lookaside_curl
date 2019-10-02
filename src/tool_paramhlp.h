@@ -48,5 +48,7 @@ int ftpcccmethod(struct Configurable *config, const char *str);
 
 long delegation(struct Configurable *config, char *str);
 
+ParameterError str2tls_max(long *val, const char *str);
+
 #endif /* HEADER_CURL_TOOL_PARAMHLP_H */
 

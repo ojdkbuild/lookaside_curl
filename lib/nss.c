@@ -195,6 +195,11 @@ static const cipher_s cipherlist[] = {
  {"dhe_rsa_chacha20_poly1305_sha_256",
      TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256},
 #endif
+#ifdef TLS_AES_256_GCM_SHA384
+ {"aes_128_gcm_sha_256",              TLS_AES_128_GCM_SHA256},
+ {"aes_256_gcm_sha_384",              TLS_AES_256_GCM_SHA384},
+ {"chacha20_poly1305_sha_256",        TLS_CHACHA20_POLY1305_SHA256},
+#endif
 };
 
 static const char* pem_library = "libnsspem.so";
@@ -1284,59 +1289,107 @@ static CURLcode nss_load_ca_certificates(struct connectdata *conn,
   return CURLE_OK;
 }
 
-static CURLcode nss_init_sslver(SSLVersionRange *sslver,
-                                struct SessionHandle *data)
+static CURLcode nss_sslver_from_curl(PRUint16 *nssver, long version)
 {
-  switch (data->set.ssl.version) {
-  default:
-  case CURL_SSLVERSION_DEFAULT:
-    break;
-
+  switch(version) {
   case CURL_SSLVERSION_TLSv1:
-    sslver->min = SSL_LIBRARY_VERSION_TLS_1_0;
 #ifdef SSL_LIBRARY_VERSION_TLS_1_2
-    sslver->max = SSL_LIBRARY_VERSION_TLS_1_2;
+    *nssver = SSL_LIBRARY_VERSION_TLS_1_2;
 #elif defined SSL_LIBRARY_VERSION_TLS_1_1
-    sslver->max = SSL_LIBRARY_VERSION_TLS_1_1;
+    *nssver = SSL_LIBRARY_VERSION_TLS_1_1;
 #else
-    sslver->max = SSL_LIBRARY_VERSION_TLS_1_0;
+    *nssver = SSL_LIBRARY_VERSION_TLS_1_0;
 #endif
     return CURLE_OK;
 
   case CURL_SSLVERSION_SSLv2:
-    sslver->min = SSL_LIBRARY_VERSION_2;
-    sslver->max = SSL_LIBRARY_VERSION_2;
+    *nssver = SSL_LIBRARY_VERSION_2;
     return CURLE_OK;
 
   case CURL_SSLVERSION_SSLv3:
-    sslver->min = SSL_LIBRARY_VERSION_3_0;
-    sslver->max = SSL_LIBRARY_VERSION_3_0;
+    *nssver = SSL_LIBRARY_VERSION_3_0;
     return CURLE_OK;
 
   case CURL_SSLVERSION_TLSv1_0:
-    sslver->min = SSL_LIBRARY_VERSION_TLS_1_0;
-    sslver->max = SSL_LIBRARY_VERSION_TLS_1_0;
+    *nssver = SSL_LIBRARY_VERSION_TLS_1_0;
     return CURLE_OK;
 
   case CURL_SSLVERSION_TLSv1_1:
 #ifdef SSL_LIBRARY_VERSION_TLS_1_1
-    sslver->min = SSL_LIBRARY_VERSION_TLS_1_1;
-    sslver->max = SSL_LIBRARY_VERSION_TLS_1_1;
+    *nssver = SSL_LIBRARY_VERSION_TLS_1_1;
     return CURLE_OK;
+#else
+    return CURLE_SSL_CONNECT_ERROR;
 #endif
-    break;
 
   case CURL_SSLVERSION_TLSv1_2:
 #ifdef SSL_LIBRARY_VERSION_TLS_1_2
-    sslver->min = SSL_LIBRARY_VERSION_TLS_1_2;
-    sslver->max = SSL_LIBRARY_VERSION_TLS_1_2;
+    *nssver = SSL_LIBRARY_VERSION_TLS_1_2;
     return CURLE_OK;
+#else
+    return CURLE_SSL_CONNECT_ERROR;
 #endif
-    break;
+
+  case CURL_SSLVERSION_TLSv1_3:
+#ifdef SSL_LIBRARY_VERSION_TLS_1_3
+    *nssver = SSL_LIBRARY_VERSION_TLS_1_3;
+    return CURLE_OK;
+#else
+    return CURLE_SSL_CONNECT_ERROR;
+#endif
+
+  default:
+    return CURLE_SSL_CONNECT_ERROR;
+  }
+}
+
+static CURLcode nss_init_sslver(SSLVersionRange *sslver,
+                                struct SessionHandle *data)
+{
+  CURLcode result;
+  const long min = data->set.ssl.version;
+  const long max = data->set.ssl.version_max;
+
+  if(min == CURL_SSLVERSION_DEFAULT || max == CURL_SSLVERSION_MAX_DEFAULT
+      || min == CURL_SSLVERSION_TLSv1)
+  {
+    /* map CURL_SSLVERSION_DEFAULT to NSS default */
+    if(SSL_VersionRangeGetDefault(ssl_variant_stream, sslver) != SECSuccess)
+      return CURLE_SSL_CONNECT_ERROR;
+    /* ... but make sure we use at least TLSv1.0 according to libcurl API */
+    if(sslver->min < SSL_LIBRARY_VERSION_TLS_1_0)
+      sslver->min = SSL_LIBRARY_VERSION_TLS_1_0;
   }
 
-  failf(data, "TLS minor version cannot be set");
-  return CURLE_SSL_CONNECT_ERROR;
+  switch(min) {
+  case CURL_SSLVERSION_DEFAULT:
+    break;
+  case CURL_SSLVERSION_TLSv1:
+    sslver->min = SSL_LIBRARY_VERSION_TLS_1_0;
+    break;
+  default:
+    result = nss_sslver_from_curl(&sslver->min, min);
+    if(result) {
+      failf(data, "unsupported min version passed via CURLOPT_SSLVERSION");
+      return result;
+    }
+    if(max == CURL_SSLVERSION_MAX_NONE)
+      sslver->max = sslver->min;
+  }
+
+  switch(max) {
+  case CURL_SSLVERSION_MAX_NONE:
+  case CURL_SSLVERSION_MAX_DEFAULT:
+    break;
+  default:
+    result = nss_sslver_from_curl(&sslver->max, max >> 16);
+    if(result) {
+      failf(data, "unsupported max version passed via CURLOPT_SSLVERSION");
+      return result;
+    }
+  }
+
+  return CURLE_OK;
 }
 
 static CURLcode nss_fail_connect(struct ssl_connect_data *connssl,
@@ -1392,7 +1445,7 @@ static CURLcode nss_setup_connect(struct connectdata *conn, int sockindex)
   CURLcode curlerr;
 
   SSLVersionRange sslver = {
-    SSL_LIBRARY_VERSION_3_0,      /* min */
+    SSL_LIBRARY_VERSION_TLS_1_0,  /* min */
     SSL_LIBRARY_VERSION_TLS_1_0   /* max */
   };
 

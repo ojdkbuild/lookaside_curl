@@ -335,6 +335,7 @@ struct ssl_connect_data {
 
 struct ssl_config_data {
   long version;          /* what version the client wants to use */
+  long version_max;      /* max supported version the client wants to use*/
   long certverifyresult; /* result from the certificate verification */
 
   bool verifypeer;       /* set TRUE if this is desired */

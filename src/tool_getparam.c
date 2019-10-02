@@ -174,11 +174,13 @@ static const struct LongShort aliases[]= {
   {"$I", "post303",                  FALSE},
   {"$J", "metalink",                 FALSE},
   {"$M", "unix-socket",              TRUE},
+  {"$X", "tls-max",                  TRUE},
   {"0",  "http1.0",                  FALSE},
   {"1",  "tlsv1",                    FALSE},
   {"10",  "tlsv1.0",                 FALSE},
   {"11",  "tlsv1.1",                 FALSE},
   {"12",  "tlsv1.2",                 FALSE},
+  {"13",  "tlsv1.3",                 FALSE},
   {"2",  "sslv2",                    FALSE},
   {"3",  "sslv3",                    FALSE},
   {"4",  "ipv4",                     FALSE},
@@ -967,6 +969,11 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
       case 'M': /* --unix-socket */
         GetStr(&config->unix_socket_path, nextarg);
         break;
+      case 'X': /* --tls-max */
+        err = str2tls_max(&config->ssl_version_max, nextarg);
+        if(err)
+          return err;
+        break;
       }
       break;
     case '#': /* --progress-bar */
@@ -999,6 +1006,10 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
       case '2':
         /* TLS version 1.2 */
         config->ssl_version = CURL_SSLVERSION_TLSv1_2;
+        break;
+      case '3':
+        /* TLS version 1.3 */
+        config->ssl_version = CURL_SSLVERSION_TLSv1_3;
         break;
       }
       break;

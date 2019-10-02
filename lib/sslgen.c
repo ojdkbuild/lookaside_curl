@@ -86,6 +86,7 @@ Curl_ssl_config_matches(struct ssl_config_data* data,
                         struct ssl_config_data* needle)
 {
   if((data->version == needle->version) &&
+     (data->version_max == needle->version_max) &&
      (data->verifypeer == needle->verifypeer) &&
      (data->verifyhost == needle->verifyhost) &&
      safe_strequal(data->CApath, needle->CApath) &&
@@ -107,6 +108,7 @@ Curl_clone_ssl_config(struct ssl_config_data *source,
   dest->verifyhost = source->verifyhost;
   dest->verifypeer = source->verifypeer;
   dest->version = source->version;
+  dest->version_max = source->version_max;
 
   if(source->CAfile) {
     dest->CAfile = strdup(source->CAfile);

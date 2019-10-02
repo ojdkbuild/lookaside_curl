@@ -146,6 +146,7 @@ struct Configurable {
   struct curl_slist *postquote;
   struct curl_slist *prequote;
   long ssl_version;
+  long ssl_version_max;
   long ip_version;
   curl_TimeCond timecond;
   time_t condtime;

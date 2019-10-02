@@ -1109,7 +1109,8 @@ int operate(struct Configurable *config, int argc, argv_item_t argv[])
         }
 #endif
 
-        my_setopt_enum(curl, CURLOPT_SSLVERSION, config->ssl_version);
+        my_setopt_enum(curl, CURLOPT_SSLVERSION,
+                       config->ssl_version | config->ssl_version_max);
         my_setopt_enum(curl, CURLOPT_TIMECONDITION, config->timecond);
         my_setopt(curl, CURLOPT_TIMEVALUE, config->condtime);
         my_setopt_str(curl, CURLOPT_CUSTOMREQUEST, config->customrequest);

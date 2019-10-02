@@ -128,6 +128,15 @@ static void setup_des_key(const unsigned char *key_56,
 
 #else /* defined(USE_SSLEAY) */
 
+#ifndef SIZE_T_MAX
+/* some limits.h headers have this defined, some don't */
+#if defined(SIZEOF_SIZE_T) && (SIZEOF_SIZE_T > 4)
+#define SIZE_T_MAX 18446744073709551615U
+#else
+#define SIZE_T_MAX 4294967295U
+#endif
+#endif
+
 /*
  * Turns a 56 bit key into the 64 bit, odd parity key.  Used by GnuTLS and NSS.
  */
@@ -385,8 +394,11 @@ CURLcode Curl_ntlm_core_mk_nt_hash(struct SessionHandle *data,
                                    unsigned char *ntbuffer /* 21 bytes */)
 {
   size_t len = strlen(password);
-  unsigned char *pw = malloc(len * 2);
+  unsigned char *pw;
   CURLcode result;
+  if(len > SIZE_T_MAX/2) /* avoid integer overflow */
+    return CURLE_OUT_OF_MEMORY;
+  pw = len ? malloc(len * 2) : strdup("");
   if(!pw)
     return CURLE_OUT_OF_MEMORY;
 

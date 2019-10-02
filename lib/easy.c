@@ -563,11 +563,6 @@ CURL *curl_easy_duphandle(CURL *incurl)
    * get setup on-demand in the code, as that would probably decrease
    * the likeliness of us forgetting to init a buffer here in the future.
    */
-  outcurl->set.buffer_size = data->set.buffer_size;
-  outcurl->state.buffer = malloc(outcurl->set.buffer_size + 1);
-  if(!outcurl->state.buffer)
-    goto fail;
-
   outcurl->state.headerbuff = malloc(HEADERSIZE);
   if(!outcurl->state.headerbuff)
     goto fail;
@@ -638,7 +633,6 @@ CURL *curl_easy_duphandle(CURL *incurl)
   if(outcurl) {
     curl_slist_free_all(outcurl->change.cookielist);
     outcurl->change.cookielist = NULL;
-    Curl_safefree(outcurl->state.buffer);
     Curl_safefree(outcurl->state.headerbuff);
     Curl_safefree(outcurl->change.url);
     Curl_safefree(outcurl->change.referer);

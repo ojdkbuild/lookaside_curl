@@ -1421,7 +1421,6 @@ static CURLcode telnet_do(struct connectdata *conn, bool *done)
 
   /* Keep on listening and act on events */
   while(keepon) {
-    const size_t buf_size = (DWORD)data->set.buffer_size;
     waitret = WaitForMultipleObjects(obj_count, objs, FALSE, wait_timeout);
     switch(waitret) {
     case WAIT_TIMEOUT:
@@ -1456,7 +1455,7 @@ static CURLcode telnet_do(struct connectdata *conn, bool *done)
           if(!readfile_read)
             break;
 
-          if(!ReadFile(stdin_handle, buf, buf_size,
+          if(!ReadFile(stdin_handle, buf, sizeof(data->state.buffer),
                        &readfile_read, NULL)) {
             keepon = FALSE;
             code = CURLE_READ_ERROR;
@@ -1475,7 +1474,7 @@ static CURLcode telnet_do(struct connectdata *conn, bool *done)
 
     case WAIT_OBJECT_0 + 1:
     {
-      if(!ReadFile(stdin_handle, buf, buf_size,
+      if(!ReadFile(stdin_handle, buf, sizeof(data->state.buffer),
                    &readfile_read, NULL)) {
         keepon = FALSE;
         code = CURLE_READ_ERROR;

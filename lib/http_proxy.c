@@ -83,20 +83,13 @@ CURLcode Curl_proxy_connect(struct connectdata *conn)
   return CURLE_OK;
 }
 
-/*
- * Curl_proxyCONNECT() requires that we're connected to a HTTP proxy. This
- * function will issue the necessary commands to get a seamless tunnel through
- * this proxy. After that, the socket can be used just as a normal socket.
- *
- * 'blocking' set to TRUE means that this function will do the entire CONNECT
- * + response in a blocking fashion. Should be avoided!
- */
+#define CONNECT_BUFFER_SIZE 16384
 
-CURLcode Curl_proxyCONNECT(struct connectdata *conn,
-                           int sockindex,
-                           const char *hostname,
-                           unsigned short remote_port,
-                           bool blocking)
+CURLcode CONNECT(struct connectdata *conn,
+                 int sockindex,
+                 const char *hostname,
+                 unsigned short remote_port,
+                 bool blocking)
 {
   int subversion=0;
   struct SessionHandle *data=conn->data;
@@ -253,14 +246,19 @@ CURLcode Curl_proxyCONNECT(struct connectdata *conn,
       char *ptr;
       char *line_start;
 
-      ptr=data->state.buffer;
+      ptr = conn->connect_buffer;
       line_start = ptr;
 
       nread=0;
       perline=0;
       keepon=TRUE;
 
-      while((nread<BUFSIZE) && (keepon && !error)) {
+      while((nread < (size_t)CONNECT_BUFFER_SIZE) && (keepon && !error)) {
+
+        if(ptr >= &conn->connect_buffer[CONNECT_BUFFER_SIZE]) {
+          failf(data, "CONNECT response too large!");
+          return CURLE_RECV_ERROR;
+        }
 
         check = Curl_timeleft(data, NULL, TRUE);
         if(check <= 0) {
@@ -279,8 +277,8 @@ CURLcode Curl_proxyCONNECT(struct connectdata *conn,
         case 0: /* timeout */
           break;
         default:
-          DEBUGASSERT(ptr+BUFSIZE-nread <= data->state.buffer+BUFSIZE+1);
-          result = Curl_read(conn, tunnelsocket, ptr, BUFSIZE-nread,
+          result = Curl_read(conn, tunnelsocket, ptr,
+                             CONNECT_BUFFER_SIZE - nread,
                              &gotbytes);
           if(result==CURLE_AGAIN)
             continue; /* go loop yourself */
@@ -313,7 +311,7 @@ CURLcode Curl_proxyCONNECT(struct connectdata *conn,
               /* This means we are currently ignoring a response-body */
 
               nread = 0; /* make next read start over in the read buffer */
-              ptr=data->state.buffer;
+              ptr = conn->connect_buffer;
               if(cl) {
                 /* A Content-Length based body: simply count down the counter
                    and make sure to break out of the loop when we're done! */
@@ -386,7 +384,7 @@ CURLcode Curl_proxyCONNECT(struct connectdata *conn,
                     /* end of response-headers from the proxy */
                     nread = 0; /* make next read start over in the read
                                   buffer */
-                    ptr=data->state.buffer;
+                    ptr = conn->connect_buffer;
                     if((407 == k->httpcode) && !data->state.authproblem) {
                       /* If we get a 407 response code with content length
                          when we have no auth problem, we must ignore the
@@ -585,4 +583,37 @@ CURLcode Curl_proxyCONNECT(struct connectdata *conn,
   data->req.ignorebody = FALSE; /* put it (back) to non-ignore state */
   return CURLE_OK;
 }
+
+/*
+ * Curl_proxyCONNECT() requires that we're connected to a HTTP proxy. This
+ * function will issue the necessary commands to get a seamless tunnel through
+ * this proxy. After that, the socket can be used just as a normal socket.
+ *
+ * 'blocking' set to TRUE means that this function will do the entire CONNECT
+ * + response in a blocking fashion. Should be avoided!
+ */
+
+CURLcode Curl_proxyCONNECT(struct connectdata *conn,
+                           int sockindex,
+                           const char *hostname,
+                           unsigned short remote_port,
+                           bool blocking)
+{
+  CURLcode result;
+  if(TUNNEL_INIT == conn->tunnel_state[sockindex]) {
+    if(!conn->connect_buffer) {
+      conn->connect_buffer = malloc(CONNECT_BUFFER_SIZE);
+      if(!conn->connect_buffer)
+        return CURLE_OUT_OF_MEMORY;
+    }
+  }
+  result = CONNECT(conn, sockindex, hostname, remote_port, blocking);
+
+  if(result || (TUNNEL_COMPLETE == conn->tunnel_state[sockindex]))
+    Curl_safefree(conn->connect_buffer);
+
+  return result;
+}
+
+
 #endif /* CURL_DISABLE_PROXY */

@@ -1665,7 +1665,7 @@ CURLcode Curl_smtp_escape_eob(struct connectdata *conn, ssize_t nread)
 
   /* Do we need to allocate the scatch buffer? */
   if(!data->state.scratch) {
-    data->state.scratch = malloc(2 * BUFSIZE);
+    data->state.scratch = malloc(2 * data->set.buffer_size);
 
     if(!data->state.scratch) {
       failf (data, "Failed to alloc scratch buffer!");

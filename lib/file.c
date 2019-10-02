@@ -364,7 +364,7 @@ static CURLcode file_upload(struct connectdata *conn)
 
   while(res == CURLE_OK) {
     int readcount;
-    res = Curl_fillreadbuffer(conn, BUFSIZE, &readcount);
+    res = Curl_fillreadbuffer(conn, (int)data->set.buffer_size, &readcount);
     if(res)
       break;
 
@@ -473,9 +473,10 @@ static CURLcode file_do(struct connectdata *conn, bool *done)
      date. */
   if(data->set.opt_no_body && data->set.include_header && fstated) {
     CURLcode result;
-    snprintf(buf, sizeof(data->state.buffer),
+    char header[80];
+    snprintf(header, sizeof(header),
              "Content-Length: %" FORMAT_OFF_T "\r\n", expected_size);
-    result = Curl_client_write(conn, CLIENTWRITE_BOTH, buf, 0);
+    result = Curl_client_write(conn, CLIENTWRITE_BOTH, header, 0);
     if(result)
       return result;
 
@@ -493,7 +494,7 @@ static CURLcode file_do(struct connectdata *conn, bool *done)
         return result;
 
       /* format: "Tue, 15 Nov 1994 12:45:26 GMT" */
-      snprintf(buf, BUFSIZE-1,
+      snprintf(header, sizeof(header),
                "Last-Modified: %s, %02d %s %4d %02d:%02d:%02d GMT\r\n",
                Curl_wkday[tm->tm_wday?tm->tm_wday-1:6],
                tm->tm_mday,
@@ -557,8 +558,8 @@ static CURLcode file_do(struct connectdata *conn, bool *done)
   while(res == CURLE_OK) {
     /* Don't fill a whole buffer if we want less than all data */
     size_t bytestoread =
-      (expected_size < CURL_OFF_T_C(BUFSIZE) - CURL_OFF_T_C(1)) ?
-      curlx_sotouz(expected_size) : BUFSIZE - 1;
+      (expected_size < data->set.buffer_size) ?
+      curlx_sotouz(expected_size) : (size_t)data->set.buffer_size;
 
     nread = read(fd, buf, bytestoread);
 

@@ -193,9 +193,12 @@
 #include <libssh2_sftp.h>
 #endif /* HAVE_LIBSSH2_H */
 
-/* Download buffer size, keep it fairly big for speed reasons */
-#undef BUFSIZE
-#define BUFSIZE CURL_MAX_WRITE_SIZE
+/* The upload buffer size, should not be smaller than CURL_MAX_WRITE_SIZE, as
+   it needs to hold a full buffer as could be sent in a write callback */
+#define UPLOAD_BUFSIZE CURL_MAX_WRITE_SIZE
+
+/* The "master buffer" is for HTTP pipelining */
+#define MASTERBUF_SIZE 16384
 
 /* Initial size of the buffer to store headers in, it'll be enlarged in case
    of need. */
@@ -1015,7 +1018,8 @@ struct connectdata {
     TUNNEL_COMPLETE /* CONNECT response received completely */
   } tunnel_state[2]; /* two separate ones to allow FTP */
 
-   struct connectbundle *bundle; /* The bundle we are member of */
+  struct connectbundle *bundle; /* The bundle we are member of */
+  char *connect_buffer; /* for CONNECT business */
 };
 
 /* The end of connectdata. */
@@ -1174,8 +1178,8 @@ struct UrlState {
   char *headerbuff; /* allocated buffer to store headers in */
   size_t headersize;   /* size of the allocation */
 
-  char buffer[BUFSIZE+1]; /* download buffer */
-  char uploadbuffer[BUFSIZE+1]; /* upload buffer */
+  char *buffer; /* download buffer */
+  char uploadbuffer[UPLOAD_BUFSIZE+1]; /* upload buffer */
   curl_off_t current_speed;  /* the ProgressShow() funcion sets this,
                                 bytes / second */
   bool this_is_a_follow; /* this is a followed Location: request */

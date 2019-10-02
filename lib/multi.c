@@ -1452,7 +1452,7 @@ static CURLMcode multi_runsingle(struct Curl_multi *multi,
 
         /* calculate upload rate-limitation timeout. */
         buffersize = (int)(data->set.buffer_size ?
-                           data->set.buffer_size : BUFSIZE);
+                           data->set.buffer_size : MASTERBUF_SIZE);
         timeout_ms = Curl_sleep_time(data->set.max_send_speed,
                                      data->progress.ulspeed, buffersize);
         Curl_expire(data, timeout_ms);
@@ -1468,7 +1468,7 @@ static CURLMcode multi_runsingle(struct Curl_multi *multi,
 
          /* Calculate download rate-limitation timeout. */
         buffersize = (int)(data->set.buffer_size ?
-                           data->set.buffer_size : BUFSIZE);
+                           data->set.buffer_size : MASTERBUF_SIZE);
         timeout_ms = Curl_sleep_time(data->set.max_recv_speed,
                                      data->progress.dlspeed, buffersize);
         Curl_expire(data, timeout_ms);

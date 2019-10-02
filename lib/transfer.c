@@ -385,8 +385,7 @@ static CURLcode readwrite_data(struct SessionHandle *data,
   /* This is where we loop until we have read everything there is to
      read or we get a CURLE_AGAIN */
   do {
-    size_t buffersize = data->set.buffer_size?
-      data->set.buffer_size : BUFSIZE;
+    size_t buffersize = data->set.buffer_size;
     size_t bytestoread = buffersize;
 
     if(k->size != -1 && !k->header) {
@@ -627,8 +626,6 @@ static CURLcode readwrite_data(struct SessionHandle *data,
         excess = (size_t)(k->bytecount + nread - k->maxdownload);
         if(excess > 0 && !k->ignorebody) {
           if(conn->data->multi && Curl_multi_canPipeline(conn->data->multi)) {
-            /* The 'excess' amount below can't be more than BUFSIZE which
-               always will fit in a size_t */
             infof(data,
                   "Rewinding stream by : %zu"
                   " bytes on url %s (size = %" FORMAT_OFF_T
@@ -738,10 +735,15 @@ static CURLcode readwrite_data(struct SessionHandle *data,
 
     } /* if(! header and data to read ) */
 
-    if(conn->handler->readwrite &&
-       (excess > 0 && !conn->bits.stream_was_rewound)) {
+    if(conn->handler->readwrite && excess && !conn->bits.stream_was_rewound) {
       /* Parse the excess data */
       k->str += nread;
+
+      if(&k->str[excess] > &k->buf[data->set.buffer_size]) {
+        /* the excess amount was too excessive(!), make sure
+           it doesn't read out of buffer */
+        excess = &k->buf[data->set.buffer_size] - k->str;
+      }
       nread = (ssize_t)excess;
 
       result = conn->handler->readwrite(data, conn, &nread, &readmore);
@@ -836,7 +838,7 @@ static CURLcode readwrite_upload(struct SessionHandle *data,
             sending_http_headers = FALSE;
         }
 
-        result = Curl_fillreadbuffer(conn, BUFSIZE, &fillcount);
+        result = Curl_fillreadbuffer(conn, UPLOAD_BUFSIZE, &fillcount);
         if(result)
           return result;
 
@@ -881,7 +883,7 @@ static CURLcode readwrite_upload(struct SessionHandle *data,
 #endif
          (data->set.crlf))) {
         if(data->state.scratch == NULL)
-          data->state.scratch = malloc(2*BUFSIZE);
+          data->state.scratch = malloc(2 * data->set.buffer_size);
         if(data->state.scratch == NULL) {
           failf (data, "Failed to alloc scratch buffer!");
           return CURLE_OUT_OF_MEMORY;

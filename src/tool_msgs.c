@@ -67,8 +67,8 @@ void warnf(struct Configurable *config, const char *fmt, ...)
 
         (void)fwrite(ptr, cut + 1, 1, config->errors);
         fputs("\n", config->errors);
-        ptr += cut+1; /* skip the space too */
-        len -= cut;
+        ptr += cut + 1; /* skip the space too */
+        len -= cut + 1;
       }
       else {
         fputs(ptr, config->errors);

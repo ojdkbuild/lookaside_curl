@@ -63,6 +63,15 @@
 #    define DESKEY(x) &x
 #  endif
 
+#ifndef SIZE_T_MAX
+/* some limits.h headers have this defined, some don't */
+#if defined(SIZEOF_SIZE_T) && (SIZEOF_SIZE_T > 4)
+#define SIZE_T_MAX 18446744073709551615U
+#else
+#define SIZE_T_MAX 4294967295U
+#endif
+#endif
+
 #elif defined(USE_GNUTLS_NETTLE)
 
 #  include <nettle/des.h>

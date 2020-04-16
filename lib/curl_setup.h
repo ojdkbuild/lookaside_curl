@@ -694,4 +694,9 @@ int netware_init(void);
 #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
 #endif
 
+/* Define S_ISDIR if not defined by system headers, f.e. MSVC */
+#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif
+
 #endif /* HEADER_CURL_SETUP_H */

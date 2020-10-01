@@ -98,12 +98,19 @@ static int https_getsock(struct connectdata *conn,
 #define https_connecting(x,y) CURLE_COULDNT_CONNECT
 #endif
 
+static CURLcode Curl_http_setup_conn(struct connectdata *conn)
+{
+  /* free protocol-specific struct so that it can be setup properly later on */
+  Curl_safefree(conn->data->state.proto.http);
+  return CURLE_OK;
+}
+
 /*
  * HTTP handler interface.
  */
 const struct Curl_handler Curl_handler_http = {
   "HTTP",                               /* scheme */
-  ZERO_NULL,                            /* setup_connection */
+  Curl_http_setup_conn,                 /* setup_connection */
   Curl_http,                            /* do_it */
   Curl_http_done,                       /* done */
   ZERO_NULL,                            /* do_more */
@@ -127,7 +134,7 @@ const struct Curl_handler Curl_handler_http = {
  */
 const struct Curl_handler Curl_handler_https = {
   "HTTPS",                              /* scheme */
-  ZERO_NULL,                            /* setup_connection */
+  Curl_http_setup_conn,                 /* setup_connection */
   Curl_http,                            /* do_it */
   Curl_http_done,                       /* done */
   ZERO_NULL,                            /* do_more */

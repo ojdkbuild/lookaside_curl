@@ -1404,6 +1404,11 @@ ParameterError getparameter(char *flag,    /* f or -long-flag */
         return err;
       break;
     case 'i':
+      if(config->content_disposition) {
+        warnf(config,
+              "--include and --remote-header-name cannot be combined.\n");
+        return PARAM_BAD_USE;
+      }
       config->include_headers = toggle; /* include the headers as well in the
                                            general output stream */
       break;

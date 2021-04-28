@@ -112,6 +112,12 @@ size_t tool_header_cb(void *ptr, size_t size, size_t nmemb, void *userdata)
       len = (ssize_t)cb - (p - str);
       filename = parse_filename(p, len);
       if(filename) {
+        if(outs->stream) {
+          /* indication of problem, get out! */
+          free(filename);
+          return failure;
+        }
+
         outs->filename = filename;
         outs->alloc_filename = TRUE;
         outs->is_cd_filename = TRUE;
